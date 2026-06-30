@@ -496,13 +496,43 @@ def save_signal(payload, remote_addr):
         note = clean_text(payload.get("note")) or build_signal_note(parsed, raw_text)
         existing = None
         if source_url:
-            existing = conn.execute("SELECT id FROM fuel_signals WHERE source_url = ?", (source_url,)).fetchone()
+            existing = conn.execute("SELECT id, station_id FROM fuel_signals WHERE source_url = ?", (source_url,)).fetchone()
         if not existing:
             existing = conn.execute(
-                "SELECT id FROM fuel_signals WHERE raw_text = ? AND source = ? AND observed_at = ?",
+                "SELECT id, station_id FROM fuel_signals WHERE raw_text = ? AND source = ? AND observed_at = ?",
                 (raw_text, source, observed_at),
             ).fetchone()
         if existing:
+            station_id = station_id or existing["station_id"] or ""
+            conn.execute(
+                """
+                UPDATE fuel_signals
+                SET station_id = ?,
+                    category = ?,
+                    confidence = ?,
+                    queue_level = ?,
+                    fuel_types_json = ?,
+                    note = ?,
+                    raw_text = ?,
+                    source = ?,
+                    observed_at = ?,
+                    expires_at = ?
+                WHERE id = ?
+                """,
+                (
+                    station_id or None,
+                    category,
+                    confidence,
+                    queue_level,
+                    json.dumps([clean_text(item) for item in fuel_types if clean_text(item)], ensure_ascii=False),
+                    note,
+                    raw_text,
+                    source,
+                    observed_at,
+                    expires_at,
+                    existing["id"],
+                ),
+            )
             return {"ok": True, "signalId": existing["id"], "stationId": station_id, "category": category, "observedAt": observed_at}
 
         cursor = conn.execute(
@@ -554,8 +584,18 @@ def parse_signal(text):
     has_delivery = bool(re.search(r"будет|привез|привоз|завоз|поставка|ожида", lowered))
     has_queue = bool(re.search(r"очеред|занима[ею]т|сто[ия]т\s+.*азс|колонн", lowered))
     has_closed = bool(re.search(r"закрыт|не\s+работа|много\s+закрытых", lowered))
-    has_no_fuel = bool(re.search(r"нет\s+(бенз|топлив|дт|95|92)|без\s+(бенз|топлив)|кончил", lowered))
-    has_available = bool(re.search(r"есть\s+(бенз|топлив|дт|95|92)|залил|заправил|можно\s+заправ", lowered))
+    has_no_fuel = bool(
+        re.search(
+            r"нет\s+(бенз|топлив|дт|95|92)|без\s+(бенз|топлив)|кончил|нельзя\s+купить|не\s+отпускают\s+топлив|топлив[а-я]*\s+нет",
+            lowered,
+        )
+    )
+    has_available = bool(
+        re.search(
+            r"есть\s+(бенз|топлив|дт|95|92)|есть\s+в\s+продаже|в\s+наличии|залил|заправил|заправляют|можно\s+заправ|чтобы\s+заправ|выдают|отпускают|отпускали|продают",
+            lowered,
+        )
+    )
 
     category = "unknown"
     confidence = 0.45
@@ -648,6 +688,10 @@ def match_signal_station(conn, raw_text):
         return ""
 
     rows = conn.execute("SELECT id, name, brand, address FROM stations").fetchall()
+    hinted = match_station_by_hints(rows, text)
+    if hinted:
+        return hinted
+
     best = {"id": "", "score": 0}
     for row in rows:
         fields = [row["name"], row["brand"], row["address"]]
@@ -664,6 +708,35 @@ def match_signal_station(conn, raw_text):
             best = {"id": row["id"], "score": score}
 
     return best["id"] if best["score"] >= 2 else ""
+
+
+def match_station_by_hints(rows, text):
+    hints = [
+        {
+            "text_all": ("лукойл",),
+            "text_any": ("пять звезд", "пяти звезд", "тц пять звезд", "юмр", "юбилейный"),
+            "station_all": ("лукойл", "чекистов"),
+        },
+        {
+            "text_all": ("газпромнефть", "уральская"),
+            "station_all": ("газпромнефть", "уральская"),
+        },
+    ]
+
+    for hint in hints:
+        text_all = hint.get("text_all", ())
+        text_any = hint.get("text_any", ())
+        if text_all and not all(item in text for item in text_all):
+            continue
+        if text_any and not any(item in text for item in text_any):
+            continue
+
+        for row in rows:
+            station_text = normalize_match_text(" ".join([row["name"], row["brand"], row["address"]]))
+            if all(item in station_text for item in hint["station_all"]):
+                return row["id"]
+
+    return ""
 
 
 def normalize_match_text(value):

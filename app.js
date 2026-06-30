@@ -6,6 +6,7 @@ const DEFAULT_CONFIG = {
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
   },
 };
+const FUEL_STATUS_CATEGORIES = new Set(["fuel_available", "no_fuel"]);
 
 const state = {
   config: DEFAULT_CONFIG,
@@ -188,6 +189,9 @@ function setActive(selector, activeButton) {
 
 function render(payload) {
   state.filtered = applyFilters(state.stations);
+  if (state.selectedId && !state.filtered.some((station) => station.id === state.selectedId)) {
+    state.selectedId = null;
+  }
   renderSummary();
   renderList();
   renderMap();
@@ -210,6 +214,10 @@ function render(payload) {
 
 function applyFilters(stations) {
   const filtered = stations.filter((station) => {
+    if (!hasFuelStatusSignal(station)) {
+      return false;
+    }
+
     if (state.filters.status !== "all" && station.status !== state.filters.status) {
       return false;
     }
@@ -270,27 +278,27 @@ function minVisiblePrice(station) {
 }
 
 function renderSummary() {
-  const openStations = state.stations.filter((station) => station.status === "open");
-  const activeStations = state.stations.filter((station) => station.status !== "closed");
+  const confirmedStations = state.stations.filter(hasFuelStatusSignal);
+  const openStations = confirmedStations.filter((station) => station.status === "open");
+  const activeStations = confirmedStations.filter((station) => station.status !== "closed");
   const ai92 = activeStations
     .flatMap((station) => station.fuels)
     .filter((fuel) => fuel.type === "АИ-92" && fuel.available && fuel.price)
     .map((fuel) => fuel.price);
-  const trafficStations = activeStations.filter((station) => station.traffic.hasData);
-  const avgTraffic =
-    trafficStations.length === 0
-      ? null
-      : trafficStations.reduce((sum, station) => sum + station.traffic.score, 0) / trafficStations.length;
 
-  els.openCount.textContent = `${openStations.length}/${state.stations.length}`;
+  els.openCount.textContent = `${openStations.length}/${confirmedStations.length}`;
   els.bestAi92.textContent = ai92.length ? `${Math.min(...ai92).toFixed(2)} ₽` : "-";
-  els.trafficAvg.textContent = String(countFreshSignals());
+  els.trafficAvg.textContent = String(countFuelStatusSignals());
   els.resultCount.textContent = `${state.filtered.length} ${pluralizeStation(state.filtered.length)}`;
 }
 
 function renderList() {
   if (!state.filtered.length) {
-    els.stationList.innerHTML = '<div class="empty-state">По текущим фильтрам АЗС не найдены</div>';
+    const hasConfirmed = state.stations.some(hasFuelStatusSignal);
+    els.stationList.innerHTML = hasConfirmed
+      ? '<div class="empty-state">По текущим фильтрам подтверждённые АЗС не найдены</div>'
+      : '<div class="empty-state">Пока нет АЗС со свежим подтверждением наличия или отсутствия топлива</div>';
+    renderGlobalSignals();
     return;
   }
 
@@ -449,8 +457,19 @@ function isSignalFresh(signal) {
   return Date.now() - observed <= 48 * 60 * 60 * 1000;
 }
 
-function countFreshSignals() {
-  return state.stations.reduce((sum, station) => sum + station.signals.filter(isSignalFresh).length, 0) + state.signals.filter(isSignalFresh).length;
+function isFuelStatusSignal(signal) {
+  return isSignalFresh(signal) && FUEL_STATUS_CATEGORIES.has(signal.category);
+}
+
+function hasFuelStatusSignal(station) {
+  return station.signals.some(isFuelStatusSignal);
+}
+
+function countFuelStatusSignals() {
+  return (
+    state.stations.reduce((sum, station) => sum + station.signals.filter(isFuelStatusSignal).length, 0) +
+    state.signals.filter(isFuelStatusSignal).length
+  );
 }
 
 function formatSchedule(schedule) {
@@ -503,7 +522,7 @@ function renderMap() {
     const marker = L.marker([station.coords.lat, station.coords.lng], {
       icon: L.divIcon({
         className: "",
-        html: `<span class="marker-dot ${station.status}${station.signals.some(isSignalFresh) ? " has-signal" : ""}">${markerLabel(station)}</span>`,
+        html: `<span class="marker-dot ${station.status} has-signal">${markerLabel(station)}</span>`,
         iconSize: [34, 34],
         iconAnchor: [17, 17],
       }),
@@ -576,7 +595,7 @@ function selectStation(id) {
 }
 
 function fitToStations(options = {}) {
-  const stations = state.filtered.length ? state.filtered : state.stations;
+  const stations = state.filtered.length ? state.filtered : state.stations.filter(hasFuelStatusSignal);
   if (!stations.length) {
     map.setView(KRASNODAR_CENTER, 12);
     return;
@@ -587,6 +606,8 @@ function fitToStations(options = {}) {
 }
 
 function markerLabel(station) {
+  const hasNoFuel = station.signals.some((signal) => isFuelStatusSignal(signal) && signal.category === "no_fuel");
+  if (hasNoFuel) return "!";
   const available = station.fuels.filter((fuel) => fuel.available).length;
   return available || "!";
 }
