@@ -26,6 +26,7 @@ let map;
 let tileLayer;
 let markerLayer;
 let trafficLayer;
+let didInitialFit = false;
 
 const els = {
   openCount: document.querySelector("#openCount"),
@@ -59,6 +60,9 @@ function initMap() {
   L.control.zoom({ position: "bottomright" }).addTo(map);
   markerLayer = L.layerGroup().addTo(map);
   trafficLayer = L.layerGroup().addTo(map);
+
+  window.addEventListener("resize", () => refreshMapLayout({ fit: false }));
+  requestAnimationFrame(() => refreshMapLayout({ fit: false }));
 }
 
 async function loadAll() {
@@ -183,6 +187,11 @@ function render(payload) {
   renderList();
   renderMap();
   renderDetail();
+  refreshMapLayout({ fit: Boolean(payload && !didInitialFit) });
+
+  if (payload && !didInitialFit) {
+    didInitialFit = true;
+  }
 
   if (payload) {
     els.dataStamp.textContent = formatDateTime(payload.generatedAt);
@@ -350,6 +359,20 @@ function renderMap() {
     marker.on("click", () => selectStation(station.id));
     markerLayer.addLayer(marker);
   });
+
+  refreshMapLayout({ fit: false });
+}
+
+function refreshMapLayout({ fit = false } = {}) {
+  if (!map) return;
+
+  requestAnimationFrame(() => {
+    map.invalidateSize({ animate: false, pan: false });
+
+    if (fit) {
+      fitToStations({ animate: false });
+    }
+  });
 }
 
 function renderDetail() {
@@ -397,7 +420,7 @@ function selectStation(id) {
   renderDetail();
 }
 
-function fitToStations() {
+function fitToStations(options = {}) {
   const stations = state.filtered.length ? state.filtered : state.stations;
   if (!stations.length) {
     map.setView(KRASNODAR_CENTER, 12);
@@ -405,7 +428,7 @@ function fitToStations() {
   }
 
   const bounds = L.latLngBounds(stations.map((station) => [station.coords.lat, station.coords.lng]));
-  map.fitBounds(bounds.pad(0.18), { maxZoom: 14 });
+  map.fitBounds(bounds.pad(0.18), { maxZoom: 13, animate: options.animate ?? true });
 }
 
 function markerLabel(station) {
