@@ -266,6 +266,7 @@ function minVisiblePrice(station) {
 }
 
 function renderSummary() {
+  const openStations = state.stations.filter((station) => station.status === "open");
   const activeStations = state.stations.filter((station) => station.status !== "closed");
   const ai92 = activeStations
     .flatMap((station) => station.fuels)
@@ -277,7 +278,7 @@ function renderSummary() {
       ? null
       : trafficStations.reduce((sum, station) => sum + station.traffic.score, 0) / trafficStations.length;
 
-  els.openCount.textContent = String(state.stations.length);
+  els.openCount.textContent = `${openStations.length}/${state.stations.length}`;
   els.bestAi92.textContent = ai92.length ? `${Math.min(...ai92).toFixed(2)} ₽` : "-";
   els.trafficAvg.textContent = avgTraffic === null ? "-" : `${avgTraffic.toFixed(1)}/10`;
   els.resultCount.textContent = `${state.filtered.length} ${pluralizeStation(state.filtered.length)}`;
@@ -307,6 +308,7 @@ function renderStationCard(station) {
         ${renderStatus(station.status)}
       </span>
       <span class="fuel-row">${station.fuels.map(renderFuel).join("")}</span>
+      <span class="schedule-row">${renderSchedule(station.openUntil)}</span>
       <span class="station-foot">
         ${renderTraffic(station.traffic)}
         <span>${escapeHtml(formatDateTime(station.updatedAt))}</span>
@@ -347,6 +349,43 @@ function renderTraffic(traffic) {
       <span>${traffic.score}/10 · ${escapeHtml(traffic.label)}</span>
     </span>
   `;
+}
+
+function renderSchedule(schedule) {
+  const rawSchedule = String(schedule || "").trim();
+  const label = formatSchedule(rawSchedule);
+  const stateClass = label ? "schedule-pill" : "schedule-pill schedule-unknown";
+  const title = rawSchedule && !/нет данных|unknown/i.test(rawSchedule) ? ` title="${escapeHtml(rawSchedule)}"` : "";
+  return `
+    <span class="${stateClass}"${title}>
+      <i data-lucide="clock-3" aria-hidden="true"></i>
+      <span>${escapeHtml(label || "График не указан")}</span>
+    </span>
+  `;
+}
+
+function formatSchedule(schedule) {
+  if (!schedule || /нет данных|unknown/i.test(schedule)) return "";
+  if (schedule === "24/7") return "Круглосуточно";
+
+  const dayLabels = {
+    Mo: "Пн",
+    Tu: "Вт",
+    We: "Ср",
+    Th: "Чт",
+    Fr: "Пт",
+    Sa: "Сб",
+    Su: "Вс",
+    PH: "Праздники",
+  };
+  const formatted = schedule
+    .replace(/\b(Mo|Tu|We|Th|Fr|Sa|Su|PH)\b/g, (day) => dayLabels[day] || day)
+    .replace(/\boff\b/gi, "выходной")
+    .replace(/\bclosed\b/gi, "закрыто")
+    .replace(/00:00\s*-\s*24:00/g, "круглосуточно")
+    .replace(/\s*;\s*/g, "; ");
+
+  return formatted.length > 80 ? `${formatted.slice(0, 77)}...` : formatted;
 }
 
 function renderMap() {
@@ -415,7 +454,7 @@ function renderDetail() {
     <div class="fuel-row">${station.fuels.map(renderFuel).join("")}</div>
     <div class="service-row">
       ${renderTraffic(station.traffic)}
-      <span class="fuel-price">${escapeHtml(station.openUntil || "График не указан")}</span>
+      ${renderSchedule(station.openUntil)}
       ${station.services.map((service) => `<span class="fuel-price">${escapeHtml(service)}</span>`).join("")}
     </div>
   `;

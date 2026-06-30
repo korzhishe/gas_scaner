@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-06-30T09:12:28Z",
-  "sourceLabel": "Собственный collector API: ручные отчеты и импорт",
+  "generatedAt": "2026-06-30T09:28:03Z",
+  "sourceLabel": "Collector: цены RUSSIABASE, расписания OpenStreetMap",
   "stations": [
     {
       "id": "russiabase-14326868",
@@ -12,8 +12,8 @@
         "lat": 45.02524,
         "lng": 38.992965
       },
-      "status": "unknown",
-      "openUntil": "нет данных",
+      "status": "open",
+      "openUntil": "24/7",
       "updatedAt": "2026-06-30T09:00:00.000Z",
       "traffic": {
         "score": 0,
@@ -136,8 +136,8 @@
         "lat": 45.01781,
         "lng": 39.05341
       },
-      "status": "unknown",
-      "openUntil": "нет данных",
+      "status": "open",
+      "openUntil": "24/7",
       "updatedAt": "2026-06-30T09:00:00.000Z",
       "traffic": {
         "score": 0,
@@ -180,8 +180,8 @@
         "lat": 45.03131,
         "lng": 39.02857
       },
-      "status": "unknown",
-      "openUntil": "нет данных",
+      "status": "open",
+      "openUntil": "24/7",
       "updatedAt": "2026-06-30T09:00:00.000Z",
       "traffic": {
         "score": 0,
@@ -224,8 +224,8 @@
         "lat": 45.0144,
         "lng": 38.97758
       },
-      "status": "unknown",
-      "openUntil": "нет данных",
+      "status": "open",
+      "openUntil": "24/7",
       "updatedAt": "2026-06-30T09:00:00.000Z",
       "traffic": {
         "score": 0,
@@ -268,8 +268,8 @@
         "lat": 45.03156,
         "lng": 39.04128
       },
-      "status": "unknown",
-      "openUntil": "нет данных",
+      "status": "open",
+      "openUntil": "24/7",
       "updatedAt": "2026-06-30T09:00:00.000Z",
       "traffic": {
         "score": 0,
@@ -312,8 +312,8 @@
         "lat": 45.095767,
         "lng": 38.979267
       },
-      "status": "unknown",
-      "openUntil": "нет данных",
+      "status": "open",
+      "openUntil": "24/7",
       "updatedAt": "2026-06-30T09:00:00.000Z",
       "traffic": {
         "score": 0,
@@ -357,8 +357,8 @@
         "lat": 45.013351,
         "lng": 38.981896
       },
-      "status": "unknown",
-      "openUntil": "нет данных",
+      "status": "open",
+      "openUntil": "24/7",
       "updatedAt": "2026-06-30T09:00:00.000Z",
       "traffic": {
         "score": 0,
@@ -397,8 +397,8 @@
         "lat": 45.013351,
         "lng": 38.981896
       },
-      "status": "unknown",
-      "openUntil": "нет данных",
+      "status": "open",
+      "openUntil": "24/7",
       "updatedAt": "2026-06-30T09:00:00.000Z",
       "traffic": {
         "score": 0,
@@ -439,8 +439,8 @@
         "lat": 45.044733,
         "lng": 38.981983
       },
-      "status": "unknown",
-      "openUntil": "нет данных",
+      "status": "open",
+      "openUntil": "24/7",
       "updatedAt": "2026-06-30T09:00:00.000Z",
       "traffic": {
         "score": 0,
@@ -486,8 +486,8 @@
         "lat": 45.028101,
         "lng": 39.015151
       },
-      "status": "unknown",
-      "openUntil": "нет данных",
+      "status": "open",
+      "openUntil": "24/7",
       "updatedAt": "2026-06-30T09:00:00.000Z",
       "traffic": {
         "score": 0,
@@ -528,8 +528,8 @@
         "lat": 45.05986,
         "lng": 38.96175
       },
-      "status": "unknown",
-      "openUntil": "нет данных",
+      "status": "open",
+      "openUntil": "24/7",
       "updatedAt": "2026-06-30T09:00:00.000Z",
       "traffic": {
         "score": 0,
@@ -573,8 +573,8 @@
         "lat": 45.088661,
         "lng": 39.021937
       },
-      "status": "unknown",
-      "openUntil": "нет данных",
+      "status": "open",
+      "openUntil": "24/7",
       "updatedAt": "2026-06-30T09:00:00.000Z",
       "traffic": {
         "score": 0,
@@ -612,8 +612,8 @@
         "lat": 45.0346,
         "lng": 38.9239
       },
-      "status": "unknown",
-      "openUntil": "нет данных",
+      "status": "open",
+      "openUntil": "24/7",
       "updatedAt": "2026-06-30T09:00:00.000Z",
       "traffic": {
         "score": 0,
@@ -656,8 +656,8 @@
         "lat": 45.02823,
         "lng": 39.014974
       },
-      "status": "unknown",
-      "openUntil": "нет данных",
+      "status": "open",
+      "openUntil": "24/7",
       "updatedAt": "2026-06-30T09:00:00.000Z",
       "traffic": {
         "score": 0,
@@ -700,8 +700,8 @@
         "lat": 45.041513,
         "lng": 39.02637
       },
-      "status": "unknown",
-      "openUntil": "нет данных",
+      "status": "open",
+      "openUntil": "24/7",
       "updatedAt": "2026-06-30T09:00:00.000Z",
       "traffic": {
         "score": 0,
@@ -744,8 +744,8 @@
         "lat": 45.032417,
         "lng": 39.02415
       },
-      "status": "unknown",
-      "openUntil": "нет данных",
+      "status": "open",
+      "openUntil": "24/7",
       "updatedAt": "2026-06-30T09:00:00.000Z",
       "traffic": {
         "score": 0,
@@ -788,8 +788,8 @@
         "lat": 45.02245,
         "lng": 39.04935
       },
-      "status": "unknown",
-      "openUntil": "нет данных",
+      "status": "open",
+      "openUntil": "24/7",
       "updatedAt": "2026-06-30T09:00:00.000Z",
       "traffic": {
         "score": 0,
@@ -832,8 +832,8 @@
         "lat": 45.095618,
         "lng": 38.978055
       },
-      "status": "unknown",
-      "openUntil": "нет данных",
+      "status": "open",
+      "openUntil": "24/7",
       "updatedAt": "2026-06-30T09:00:00.000Z",
       "traffic": {
         "score": 0,
@@ -876,8 +876,8 @@
         "lat": 45.048861,
         "lng": 38.962653
       },
-      "status": "unknown",
-      "openUntil": "нет данных",
+      "status": "open",
+      "openUntil": "24/7",
       "updatedAt": "2026-06-30T09:00:00.000Z",
       "traffic": {
         "score": 0,
@@ -959,8 +959,8 @@
         "lat": 45.058956,
         "lng": 38.963482
       },
-      "status": "unknown",
-      "openUntil": "нет данных",
+      "status": "open",
+      "openUntil": "24/7",
       "updatedAt": "2026-06-30T09:00:00.000Z",
       "traffic": {
         "score": 0,
@@ -998,8 +998,8 @@
         "lat": 45.036868,
         "lng": 38.955331
       },
-      "status": "unknown",
-      "openUntil": "нет данных",
+      "status": "open",
+      "openUntil": "24/7",
       "updatedAt": "2026-06-30T09:00:00.000Z",
       "traffic": {
         "score": 0,
@@ -1046,8 +1046,8 @@
         "lat": 45.023045,
         "lng": 38.997055
       },
-      "status": "unknown",
-      "openUntil": "нет данных",
+      "status": "open",
+      "openUntil": "24/7",
       "updatedAt": "2026-06-30T09:00:00.000Z",
       "traffic": {
         "score": 0,

@@ -122,8 +122,6 @@ function normalizeRussiabaseStation(mapItem, detailItem, brandName) {
       coords: { lat, lng },
       services: [...new Set(services.filter(Boolean))],
     },
-    status: "unknown",
-    openUntil: "нет данных",
     source: "russiabase",
     updatedAt,
     fuels,

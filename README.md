@@ -9,6 +9,7 @@
 - `collector/server.py` - собственный источник данных на SQLite.
 - `collect.html` - форма оператора для обновления статуса, цен, наличия и пробок.
 - `scripts/import-open-sources.mjs` - импорт цен из открытых источников, сейчас из RUSSIABASE.
+- `scripts/import-osm-opening-hours.mjs` - импорт расписаний из OpenStreetMap `opening_hours` и расчет `open/closed` на текущее время Краснодара.
 - `scripts/import-benzup.mjs` - импорт АЗС и цен из Benzup API в collector.
 - `scripts/update-stations.mjs` - обновление `data/stations.json` из внешнего JSON API.
 - `.github/workflows/pages.yml` - деплой на GitHub Pages.
@@ -104,7 +105,38 @@ scripts/start-open-source-sync.sh
 */30 * * * * cd /home/deploy/projects/gas_scaner && scripts/start-open-source-sync.sh >> /tmp/gas_scaner_open_sources.log 2>&1
 ```
 
-Открытые источники цен обычно не знают текущий режим работы АЗС, поэтому такие станции получают статус `Нет данных`, а не `Открыта`.
+Открытые источники цен обычно не знают текущий режим работы АЗС, поэтому импорт цен не меняет `status` и `openUntil`. Статус работы обновляется отдельным импортом расписаний.
+
+## Импорт расписаний из OpenStreetMap
+
+Для статуса `Открыта` / `Закрыта` используется открытое поле OpenStreetMap `opening_hours`. Скрипт берет все `amenity=fuel` в границах Краснодара через Overpass API, сопоставляет их с АЗС collector по координатам, бренду и названию, затем считает статус по часовому поясу `Europe/Moscow`.
+
+Проверка без записи:
+
+```bash
+scripts/start-osm-hours-sync.sh --dry-run
+```
+
+Импорт в collector:
+
+```bash
+scripts/start-osm-hours-sync.sh
+```
+
+Переменные настройки:
+
+- `OVERPASS_URL` - по умолчанию `https://overpass-api.de/api/interpreter`.
+- `OSM_BOUNDS` - границы поиска `minLat,minLng,maxLat,maxLng`, по умолчанию `44.90,38.75,45.20,39.20`.
+- `OSM_MATCH_RADIUS_M` - радиус сопоставления с АЗС collector, по умолчанию `220`.
+- `OSM_TIME_ZONE` - по умолчанию `Europe/Moscow`.
+
+Текущий сервер уже настроен на пересчет расписаний каждые 10 минут:
+
+```cron
+*/10 * * * * cd /home/deploy/projects/gas_scaner && scripts/start-osm-hours-sync.sh >> /tmp/gas_scaner_osm_hours.log 2>&1
+```
+
+Если для станции в OSM нет `opening_hours`, сайт показывает `Статус неизвестен` и `График не указан`, а не считает такую АЗС закрытой.
 
 ## Импорт из Benzup
 

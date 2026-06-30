@@ -336,7 +336,8 @@ select {
 }
 
 .fuel-row,
-.service-row {
+.service-row,
+.schedule-row {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
@@ -379,6 +380,39 @@ select {
   padding: 4px 8px;
   border-radius: 8px;
   font-weight: 850;
+}
+
+.schedule-pill {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  gap: 6px;
+  min-height: 28px;
+  padding: 4px 8px;
+  color: var(--blue);
+  background: var(--blue-soft);
+  border: 1px solid #c5d9f2;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 850;
+}
+
+.schedule-pill span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.schedule-unknown {
+  color: var(--muted);
+  background: #eef2ef;
+  border-color: var(--line);
+}
+
+.traffic-pill svg,
+.schedule-pill svg {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
 }
 
 .traffic-low {

@@ -150,8 +150,14 @@ def upsert_state(conn, station_id, payload):
     current = conn.execute("SELECT * FROM station_state WHERE station_id = ?", (station_id,)).fetchone()
     has_traffic = isinstance(payload.get("traffic"), dict)
     traffic = payload.get("traffic") if has_traffic else {}
-    status = payload.get("status", current["status"] if current else "unknown")
-    if status not in ("open", "closed", "unknown"):
+    raw_status = clean_text(payload.get("status"))
+    if raw_status in ("open", "closed", "unknown"):
+        status = raw_status
+    elif raw_status:
+        status = "unknown"
+    elif current:
+        status = current["status"]
+    else:
         status = "unknown"
 
     score = to_float(traffic.get("score"))
@@ -296,7 +302,7 @@ def export_payload():
 
         return {
             "generatedAt": utc_now(),
-            "sourceLabel": "Собственный collector API: ручные отчеты и импорт",
+            "sourceLabel": "Collector: цены RUSSIABASE, расписания OpenStreetMap",
             "stations": stations,
         }
 
