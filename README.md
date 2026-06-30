@@ -8,6 +8,7 @@
 - `data/stations.json` - текущие данные, которые читает сайт.
 - `collector/server.py` - собственный источник данных на SQLite.
 - `collect.html` - форма оператора для обновления статуса, цен, наличия и пробок.
+- `scripts/import-open-sources.mjs` - импорт цен из открытых источников, сейчас из RUSSIABASE.
 - `scripts/import-benzup.mjs` - импорт АЗС и цен из Benzup API в collector.
 - `scripts/update-stations.mjs` - обновление `data/stations.json` из внешнего JSON API.
 - `.github/workflows/pages.yml` - деплой на GitHub Pages.
@@ -78,6 +79,32 @@ COLLECTOR_TOKEN=change-me python3 collector/server.py
 ```
 
 Форма оператора доступна в `collect.html`. На сервере с текущей конфигурацией это `http://89.167.119.100:8080/collect.html`.
+
+## Импорт из открытых источников
+
+Основной бесплатный источник цен сейчас - публичные страницы RUSSIABASE по Краснодару. Скрипт читает SSR JSON из страниц вида `https://russiabase.ru/prices?brand=119&city=154778`, импортирует координаты, адреса и цены в collector.
+
+Проверка без записи:
+
+```bash
+scripts/start-open-source-sync.sh --dry-run
+```
+
+Импорт в collector:
+
+```bash
+scripts/start-open-source-sync.sh
+```
+
+По умолчанию импортируются бренды `Газпромнефть`, `Лукойл`, `Роснефть`, `PNB`, `Teboil`, `RUSOIL`, `Irbis`, `КТК`. Бренды без открытой страницы по Краснодару пропускаются.
+
+Текущий сервер уже настроен на обновление каждые 30 минут:
+
+```cron
+*/30 * * * * cd /home/deploy/projects/gas_scaner && scripts/start-open-source-sync.sh >> /tmp/gas_scaner_open_sources.log 2>&1
+```
+
+Открытые источники цен обычно не знают текущий режим работы АЗС, поэтому такие станции получают статус `Нет данных`, а не `Открыта`.
 
 ## Импорт из Benzup
 

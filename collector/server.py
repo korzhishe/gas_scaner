@@ -17,7 +17,7 @@ PORT = int(os.environ.get("COLLECTOR_PORT", "8090"))
 TOKEN = os.environ.get("COLLECTOR_TOKEN", "")
 MAX_BODY_BYTES = 256 * 1024
 
-FUEL_TYPES = ("АИ-92", "АИ-95", "АИ-98", "ДТ", "Газ")
+FUEL_TYPES = ("АИ-92", "АИ-95", "АИ-98", "АИ-100", "ДТ", "Газ")
 
 
 def utc_now():
@@ -251,8 +251,9 @@ def export_payload():
                     WHEN 'АИ-92' THEN 1
                     WHEN 'АИ-95' THEN 2
                     WHEN 'АИ-98' THEN 3
-                    WHEN 'ДТ' THEN 4
-                    WHEN 'Газ' THEN 5
+                    WHEN 'АИ-100' THEN 4
+                    WHEN 'ДТ' THEN 5
+                    WHEN 'Газ' THEN 6
                     ELSE 99
                   END,
                   fuel_type

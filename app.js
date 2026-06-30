@@ -14,7 +14,7 @@ const state = {
   selectedId: null,
   trafficVisible: true,
   filters: {
-    status: "open",
+    status: "all",
     fuel: "all",
     traffic: "all",
     query: "",
