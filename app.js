@@ -266,18 +266,18 @@ function minVisiblePrice(station) {
 }
 
 function renderSummary() {
-  const openStations = state.stations.filter((station) => station.status === "open");
-  const ai92 = openStations
+  const activeStations = state.stations.filter((station) => station.status !== "closed");
+  const ai92 = activeStations
     .flatMap((station) => station.fuels)
     .filter((fuel) => fuel.type === "АИ-92" && fuel.available && fuel.price)
     .map((fuel) => fuel.price);
-  const trafficStations = openStations.filter((station) => station.traffic.hasData);
+  const trafficStations = activeStations.filter((station) => station.traffic.hasData);
   const avgTraffic =
     trafficStations.length === 0
       ? null
       : trafficStations.reduce((sum, station) => sum + station.traffic.score, 0) / trafficStations.length;
 
-  els.openCount.textContent = String(openStations.length);
+  els.openCount.textContent = String(state.stations.length);
   els.bestAi92.textContent = ai92.length ? `${Math.min(...ai92).toFixed(2)} ₽` : "-";
   els.trafficAvg.textContent = avgTraffic === null ? "-" : `${avgTraffic.toFixed(1)}/10`;
   els.resultCount.textContent = `${state.filtered.length} ${pluralizeStation(state.filtered.length)}`;
@@ -319,7 +319,7 @@ function renderStatus(status) {
   const labels = {
     open: "Открыта",
     closed: "Закрыта",
-    unknown: "Нет данных",
+    unknown: "Статус неизвестен",
   };
   return `<span class="badge badge-${status}">${labels[status] || labels.unknown}</span>`;
 }
