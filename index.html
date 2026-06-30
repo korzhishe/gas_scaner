@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Мониторинг открытых АЗС Краснодара, наличия топлива, цен и дорожной нагрузки рядом со станциями."
+    />
+    <title>АЗС Краснодар</title>
+    <link rel="preconnect" href="https://unpkg.com" />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIINfQXmPPROCvU8f2iBZj3YmZLD2G3r0Oc="
+      crossorigin=""
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Панель мониторинга АЗС">
+        <header class="brand-row">
+          <div>
+            <p class="eyebrow">Краснодар</p>
+            <h1>АЗС мониторинг</h1>
+          </div>
+          <button class="icon-button" id="refreshButton" type="button" aria-label="Обновить данные" title="Обновить данные">
+            <i data-lucide="refresh-cw" aria-hidden="true"></i>
+          </button>
+        </header>
+
+        <section class="status-strip" aria-label="Сводка">
+          <div>
+            <span class="metric-value" id="openCount">0</span>
+            <span class="metric-label">открыто</span>
+          </div>
+          <div>
+            <span class="metric-value" id="bestAi92">-</span>
+            <span class="metric-label">АИ-92 мин.</span>
+          </div>
+          <div>
+            <span class="metric-value" id="trafficAvg">-</span>
+            <span class="metric-label">пробки</span>
+          </div>
+        </section>
+
+        <section class="filters" aria-label="Фильтры">
+          <label class="search-box">
+            <i data-lucide="search" aria-hidden="true"></i>
+            <input id="searchInput" type="search" placeholder="Район, бренд, улица" autocomplete="off" />
+          </label>
+
+          <div class="segmented" role="group" aria-label="Статус работы">
+            <button class="segment is-active" type="button" data-status="open">Открыты</button>
+            <button class="segment" type="button" data-status="all">Все</button>
+          </div>
+
+          <div class="fuel-grid" aria-label="Тип топлива">
+            <button class="fuel-chip is-active" type="button" data-fuel="all">Все</button>
+            <button class="fuel-chip" type="button" data-fuel="АИ-92">АИ-92</button>
+            <button class="fuel-chip" type="button" data-fuel="АИ-95">АИ-95</button>
+            <button class="fuel-chip" type="button" data-fuel="АИ-98">АИ-98</button>
+            <button class="fuel-chip" type="button" data-fuel="ДТ">ДТ</button>
+            <button class="fuel-chip" type="button" data-fuel="Газ">Газ</button>
+          </div>
+
+          <div class="select-row">
+            <label>
+              <span>Пробки</span>
+              <select id="trafficFilter">
+                <option value="all">Любые</option>
+                <option value="0-2">Свободно</option>
+                <option value="3-5">Умеренно</option>
+                <option value="6-10">Плотно</option>
+              </select>
+            </label>
+            <label>
+              <span>Сортировка</span>
+              <select id="sortSelect">
+                <option value="traffic">По пробкам</option>
+                <option value="price">По цене</option>
+                <option value="updated">По обновлению</option>
+              </select>
+            </label>
+          </div>
+        </section>
+
+        <section class="list-meta" aria-live="polite">
+          <span id="resultCount">0 АЗС</span>
+          <span id="dataStamp">-</span>
+        </section>
+
+        <section class="station-list" id="stationList" aria-label="Список АЗС"></section>
+
+        <footer class="source-note">
+          <span id="sourceLabel">Источник данных</span>
+        </footer>
+      </aside>
+
+      <main class="map-pane">
+        <div class="map-toolbar" aria-label="Управление картой">
+          <button class="icon-button is-pressed" id="trafficToggle" type="button" aria-pressed="true" title="Пробки рядом с АЗС">
+            <i data-lucide="route" aria-hidden="true"></i>
+          </button>
+          <button class="icon-button" id="fitButton" type="button" title="Показать Краснодар" aria-label="Показать Краснодар">
+            <i data-lucide="map-pinned" aria-hidden="true"></i>
+          </button>
+        </div>
+        <div id="map" aria-label="Карта АЗС Краснодара"></div>
+        <section class="station-detail" id="stationDetail" aria-live="polite"></section>
+      </main>
+    </div>
+
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

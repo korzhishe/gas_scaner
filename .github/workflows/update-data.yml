@@ -1,0 +1,39 @@
+name: Update station data
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Refresh data
+        env:
+          DATA_SOURCE_URL: ${{ secrets.DATA_SOURCE_URL || vars.DATA_SOURCE_URL }}
+          DATA_SOURCE_TOKEN: ${{ secrets.DATA_SOURCE_TOKEN }}
+        run: node scripts/update-stations.mjs
+
+      - name: Commit changes
+        run: |
+          if git diff --quiet -- data/stations.json; then
+            echo "No station data changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/stations.json
+          git commit -m "Update station data"
+          git push
