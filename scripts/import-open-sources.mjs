@@ -8,6 +8,8 @@ const RUSSIABASE_BRANDS = parseBrands(
     "118:Газпромнефть,119:Лукойл,127:Роснефть,259:PNB,271:Teboil,783:RUSOIL,802:Irbis,836:КТК",
   ),
 );
+const RUSSIABASE_MATCH_EXISTING = env("RUSSIABASE_MATCH_EXISTING", "true") !== "false";
+const RUSSIABASE_MATCH_RADIUS_M = Number(env("RUSSIABASE_MATCH_RADIUS_M", "500"));
 const DRY_RUN = process.argv.includes("--dry-run");
 
 main().catch((error) => {
@@ -16,6 +18,7 @@ main().catch((error) => {
 });
 
 async function main() {
+  const existingStations = RUSSIABASE_MATCH_EXISTING ? await loadCollectorStations() : [];
   const allStations = [];
 
   for (const brand of RUSSIABASE_BRANDS) {
@@ -28,20 +31,37 @@ async function main() {
   }
 
   const uniqueStations = dedupeStations(allStations);
+  const reports = uniqueStations.map((station) => retargetToExistingStation(station, existingStations));
 
   if (DRY_RUN) {
     console.log(`Open-source stations: ${uniqueStations.length}`);
-    console.log(JSON.stringify(uniqueStations.slice(0, 8), null, 2));
+    console.log(`Existing collector stations: ${existingStations.length}`);
+    console.log(`Matched to existing stations: ${reports.filter((report) => report.stationId !== report.station?.id).length}`);
+    console.log(JSON.stringify(reports.slice(0, 8), null, 2));
     return;
   }
 
   let imported = 0;
-  for (const station of uniqueStations) {
+  for (const station of reports) {
     await postReport(station);
     imported += 1;
   }
 
   console.log(`Imported ${imported} open-source stations into collector`);
+}
+
+async function loadCollectorStations() {
+  const response = await fetch(`${COLLECTOR_URL.replace(/\/$/, "")}/api/stations`, {
+    headers: {
+      accept: "application/json",
+      ...(COLLECTOR_TOKEN ? { authorization: `Bearer ${COLLECTOR_TOKEN}` } : {}),
+    },
+  });
+  const payload = await response.json();
+  if (!response.ok) {
+    throw new Error(`Collector stations returned ${response.status}: ${payload.error || response.statusText}`);
+  }
+  return payload.stations || [];
 }
 
 async function loadRussiabaseBrand(brand) {
@@ -173,6 +193,71 @@ function dedupeStations(stations) {
     byId.set(station.stationId, station);
   }
   return [...byId.values()];
+}
+
+function retargetToExistingStation(report, existingStations) {
+  if (!existingStations.length || !report.station?.coords) return report;
+
+  const match = findExistingStation(report.station, existingStations);
+  if (!match) return report;
+
+  return {
+    stationId: match.id,
+    source: "russiabase-prices",
+    updatedAt: report.updatedAt,
+    fuels: report.fuels,
+  };
+}
+
+function findExistingStation(station, existingStations) {
+  const candidates = existingStations
+    .filter((item) => item.id?.startsWith("2gis-") && item.coords?.lat && item.coords?.lng)
+    .map((item) => {
+      const distanceM = haversineMeters(station.coords.lat, station.coords.lng, item.coords.lat, item.coords.lng);
+      const itemText = textForMatch(item.name, item.brand, item.address);
+      const stationText = textForMatch(station.name, station.brand, station.address);
+      const brandText = clean(station.brand).toLowerCase();
+      const brandBonus = brandText && itemText.includes(brandText) ? 140 : 0;
+      const nameBonus = sharedTokens(stationText, itemText) * 12;
+      return {
+        ...item,
+        distanceM,
+        score: distanceM - brandBonus - nameBonus,
+      };
+    })
+    .filter((item) => item.distanceM <= RUSSIABASE_MATCH_RADIUS_M)
+    .sort((a, b) => a.score - b.score);
+
+  return candidates[0] || null;
+}
+
+function sharedTokens(left, right) {
+  const leftTokens = new Set(left.split(/\s+/).filter((item) => item.length >= 4));
+  if (!leftTokens.size) return 0;
+  return right.split(/\s+/).filter((token) => leftTokens.has(token)).length;
+}
+
+function textForMatch(...parts) {
+  return parts
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase()
+    .replace(/ё/g, "е")
+    .replace(/["'«»]/g, "");
+}
+
+function haversineMeters(lat1, lon1, lat2, lon2) {
+  const radius = 6371000;
+  const p1 = toRadians(lat1);
+  const p2 = toRadians(lat2);
+  const dp = toRadians(lat2 - lat1);
+  const dl = toRadians(lon2 - lon1);
+  const a = Math.sin(dp / 2) ** 2 + Math.cos(p1) * Math.cos(p2) * Math.sin(dl / 2) ** 2;
+  return 2 * radius * Math.asin(Math.sqrt(a));
+}
+
+function toRadians(value) {
+  return (value * Math.PI) / 180;
 }
 
 function parseBrands(value) {

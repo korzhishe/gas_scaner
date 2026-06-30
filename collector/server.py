@@ -216,6 +216,12 @@ def upsert_fuels(conn, station_id, fuels, updated_at=None, source="manual"):
             continue
         price = to_float(fuel.get("price"))
         available = 1 if bool(fuel.get("available")) else 0
+        current = conn.execute(
+            "SELECT price FROM fuel_state WHERE station_id = ? AND fuel_type = ?",
+            (station_id, fuel_type),
+        ).fetchone()
+        if price is None and available and current and current["price"] is not None:
+            price = current["price"]
         conn.execute(
             """
             INSERT INTO fuel_state (station_id, fuel_type, price, available, updated_at, source)
@@ -302,7 +308,7 @@ def export_payload():
 
         return {
             "generatedAt": utc_now(),
-            "sourceLabel": "Collector: цены RUSSIABASE, расписания OpenStreetMap/2ГИС",
+            "sourceLabel": "Collector: АЗС и расписания 2ГИС/OpenStreetMap, цены RUSSIABASE",
             "stations": stations,
         }
 
@@ -381,6 +387,26 @@ def reports_payload(query):
     }
 
 
+def prune_payload(payload):
+    if not isinstance(payload, dict):
+        raise ValueError("payload must be a JSON object")
+
+    delete_ids = [
+        clean_text(item)
+        for item in payload.get("deleteStationIds", [])
+        if clean_text(item)
+    ]
+    if not delete_ids:
+        return {"ok": True, "deleted": 0}
+
+    with connect() as conn:
+        placeholders = ",".join("?" for _ in delete_ids)
+        result = conn.execute(f"DELETE FROM stations WHERE id IN ({placeholders})", delete_ids)
+        deleted = result.rowcount if result.rowcount is not None else 0
+
+    return {"ok": True, "deleted": deleted}
+
+
 class Handler(BaseHTTPRequestHandler):
     server_version = "GasScannerCollector/1.0"
 
@@ -412,7 +438,7 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         parsed = urlparse(self.path)
         try:
-            if parsed.path != "/api/reports":
+            if parsed.path not in ("/api/reports", "/api/prune"):
                 self.write_error(HTTPStatus.NOT_FOUND, "Not found")
                 return
 
@@ -421,8 +447,11 @@ class Handler(BaseHTTPRequestHandler):
                 self.write_error(HTTPStatus.UNAUTHORIZED, "Invalid collector token")
                 return
 
-            result = save_report(payload, self.client_address[0] if self.client_address else "")
-            self.write_json(result, HTTPStatus.CREATED)
+            if parsed.path == "/api/reports":
+                result = save_report(payload, self.client_address[0] if self.client_address else "")
+                self.write_json(result, HTTPStatus.CREATED)
+            else:
+                self.write_json(prune_payload(payload))
         except ValueError as exc:
             self.write_error(HTTPStatus.BAD_REQUEST, str(exc))
         except Exception as exc:

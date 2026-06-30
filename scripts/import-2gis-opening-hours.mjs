@@ -37,7 +37,20 @@ async function main() {
   const stations = stationsPayload.stations || [];
   const matchFile = await loadMatchFile();
   const matches = { ...(matchFile.matches || {}) };
-  const missingStations = stations.filter((station) => REFRESH_MATCHES || !matches[station.id]);
+  for (const station of stations) {
+    const dgisId = dgisIdFromStationId(station.id);
+    if (!dgisId || matches[station.id]) continue;
+    matches[station.id] = {
+      id: dgisId,
+      name: station.name || "",
+      address: station.address || "",
+      lat: station.coords?.lat,
+      lng: station.coords?.lng,
+      distanceM: 0,
+      score: 0,
+    };
+  }
+  const missingStations = stations.filter((station) => !dgisIdFromStationId(station.id) && (REFRESH_MATCHES || !matches[station.id]));
 
   let searched = 0;
   for (const station of missingStations) {
@@ -197,6 +210,11 @@ function scoreDgisCandidate(station, item) {
     distanceM,
     score: distanceM - brandBonus - nameBonus - scheduleBonus,
   };
+}
+
+function dgisIdFromStationId(stationId) {
+  const match = clean(stationId).match(/^2gis-(.+)$/);
+  return match ? match[1] : "";
 }
 
 async function loadDgisItemsById(ids) {

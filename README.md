@@ -10,6 +10,7 @@
 - `collect.html` - форма оператора для обновления статуса, цен, наличия и пробок.
 - `scripts/import-open-sources.mjs` - импорт цен из открытых источников, сейчас из RUSSIABASE.
 - `scripts/import-osm-opening-hours.mjs` - импорт расписаний из OpenStreetMap `opening_hours` и расчет `open/closed` на текущее время Краснодара.
+- `scripts/import-2gis-stations.mjs` - основной импорт каталога АЗС из 2ГИС в радиусе 40 км.
 - `scripts/import-2gis-opening-hours.mjs` - импорт расписаний из 2ГИС. Первый запуск сопоставляет АЗС с id 2ГИС, последующие запуски обновляют расписания пачкой через `items/byid`.
 - `scripts/import-benzup.mjs` - импорт АЗС и цен из Benzup API в collector.
 - `scripts/update-stations.mjs` - обновление `data/stations.json` из внешнего JSON API.
@@ -62,6 +63,7 @@ COLLECTOR_TOKEN=change-me python3 collector/server.py
 
 - `GET /api/stations` - актуальный JSON для сайта и GitHub Actions.
 - `POST /api/reports` - обновление одной АЗС. Если задан `COLLECTOR_TOKEN`, передайте `Authorization: Bearer <token>`.
+- `POST /api/prune` - удаление устаревших станций по списку id, используется импортом 2ГИС после успешного обновления каталога.
 - `GET /api/reports?stationId=krd-001` - последние отчеты.
 
 Пример отчета:
@@ -84,7 +86,7 @@ COLLECTOR_TOKEN=change-me python3 collector/server.py
 
 ## Импорт из открытых источников
 
-Основной бесплатный источник цен сейчас - публичные страницы RUSSIABASE по Краснодару. Скрипт читает SSR JSON из страниц вида `https://russiabase.ru/prices?brand=119&city=154778`, импортирует координаты, адреса и цены в collector.
+Основной бесплатный источник цен сейчас - публичные страницы RUSSIABASE по Краснодару. Скрипт читает SSR JSON из страниц вида `https://russiabase.ru/prices?brand=119&city=154778`, находит ближайшую АЗС из 2ГИС и обновляет цены в этой карточке.
 
 Проверка без записи:
 
@@ -107,6 +109,47 @@ scripts/start-open-source-sync.sh
 ```
 
 Открытые источники цен обычно не знают текущий режим работы АЗС, поэтому импорт цен не меняет `status` и `openUntil`. Статус работы обновляется отдельным импортом расписаний.
+
+## Основной каталог 2ГИС
+
+2ГИС используется как основной источник списка АЗС, координат, адресов, расписаний и паспортных типов топлива. Скрипт обходит радиус 40 км вокруг центра Краснодара сеткой точек, потому что один поисковый запрос 2ГИС ограничен первыми страницами выдачи.
+
+Ключ хранится только на сервере в `.collector.env`:
+
+```bash
+DGIS_API_KEY=your-2gis-api-key
+```
+
+Проверка без записи:
+
+```bash
+scripts/start-2gis-stations-sync.sh --dry-run --prune-other-sources
+```
+
+Импорт в collector:
+
+```bash
+scripts/start-2gis-stations-sync.sh --prune-other-sources
+```
+
+Опция `--prune-other-sources` удаляет старые `russiabase-*` и демо-станции после успешного импорта, чтобы 2ГИС оставался главным каталогом, а RUSSIABASE только обновлял цены.
+
+Переменные настройки:
+
+- `DGIS_CENTER` - центр поиска `lat,lng`, по умолчанию `45.0355,38.9753`.
+- `DGIS_RADIUS_M` - радиус поиска, по умолчанию `40000`.
+- `DGIS_GRID_STEP_M` - шаг сетки, по умолчанию `8000`.
+- `DGIS_CELL_RADIUS_M` - радиус поиска вокруг каждой точки сетки, по умолчанию `6200`.
+- `DGIS_RUBRIC_ID` - рубрика `Заправочные станции`, по умолчанию `18547`.
+- `DGIS_PRICE_MATCH_RADIUS_M` - радиус сопоставления цен RUSSIABASE с карточкой 2ГИС, по умолчанию `500`.
+
+Текущий сервер обновляет полный каталог 2ГИС раз в неделю:
+
+```cron
+31 4 * * 0 cd /home/deploy/projects/gas_scaner && scripts/start-2gis-stations-sync.sh --prune-other-sources >> /tmp/gas_scaner_2gis_stations.log 2>&1
+```
+
+2ГИС через официальный API отдает агрегаты отзывов (`rating`, количество отзывов), но не тексты свежих отзывов с датами. Поэтому автоматическая логика “по отзывам сегодня/вчера понять, есть ли бензин” сейчас не включена: для этого нужен отдельный официальный источник отзывов или разрешенный API с текстами и датами.
 
 ## Импорт расписаний из OpenStreetMap
 
@@ -141,7 +184,7 @@ scripts/start-osm-hours-sync.sh
 
 ## Импорт расписаний из 2ГИС
 
-2ГИС используется как дополнительный источник расписаний, когда OSM не знает график или нужно уточнить карточку. Скрипт не публикует ключ в клиентский код: ключ хранится только на сервере в `.collector.env`.
+2ГИС также используется для обновления расписаний уже импортированных станций. Для станций с id вида `2gis-<id>` обновитель берет id прямо из `stationId`; файл соответствий нужен только для старых не-2ГИС карточек.
 
 Добавьте ключ:
 
@@ -175,10 +218,10 @@ scripts/start-2gis-hours-sync.sh --dry-run
 - `DGIS_MATCH_FILE` - файл соответствий, по умолчанию `data/2gis-matches.json`.
 - `DGIS_TIME_ZONE` - по умолчанию `Europe/Moscow`.
 
-На текущем сервере 2ГИС обновляется раз в час:
+На текущем сервере расписания 2ГИС обновляются раз в 6 часов, чтобы не сжигать лимит ключа:
 
 ```cron
-7 * * * * cd /home/deploy/projects/gas_scaner && scripts/start-2gis-hours-sync.sh >> /tmp/gas_scaner_2gis_hours.log 2>&1
+17 */6 * * * cd /home/deploy/projects/gas_scaner && scripts/start-2gis-hours-sync.sh >> /tmp/gas_scaner_2gis_hours.log 2>&1
 ```
 
 ## Импорт из Benzup
