@@ -2,6 +2,8 @@ const COLLECTOR_URL = env("COLLECTOR_URL", "http://127.0.0.1:8090");
 const COLLECTOR_TOKEN = process.env.COLLECTOR_TOKEN || "";
 const SIGNAL_MAX_AGE_HOURS = Number(env("SIGNAL_MAX_AGE_HOURS", "48"));
 const SIGNAL_QUERIES = listEnv("SIGNAL_QUERIES", "бензин,АЗС,заправка,топливо,очередь");
+const SIGNAL_PARSE_LINKS = env("SIGNAL_PARSE_LINKS", "1") !== "0";
+const SIGNAL_ARTICLE_MAX_PER_RUN = Number(env("SIGNAL_ARTICLE_MAX_PER_RUN", "16"));
 const TELEGRAM_SOURCES = parseTelegramSources(
   env(
     "SIGNAL_TELEGRAM_CHANNELS",
@@ -37,14 +39,20 @@ async function main() {
     await sleep(250);
   }
 
-  const uniquePosts = uniqueBy(posts, (post) => post.url)
+  const sourceSignals = uniqueBy(posts, (post) => post.url)
     .filter((post) => isRelevantSignal(post.text))
     .filter((post) => isFresh(post.observedAt, SIGNAL_MAX_AGE_HOURS))
     .sort((a, b) => Date.parse(b.observedAt) - Date.parse(a.observedAt));
 
+  const articleSignals = SIGNAL_PARSE_LINKS ? await loadLinkedArticleSignals(sourceSignals) : [];
+  const uniquePosts = uniqueBy([...sourceSignals, ...articleSignals], (post) => post.url).sort(
+    (a, b) => Date.parse(b.observedAt) - Date.parse(a.observedAt),
+  );
+
   if (DRY_RUN) {
     console.log(`Telegram sources: ${TELEGRAM_SOURCES.length}`);
     console.log(`RSS sources: ${RSS_SOURCES.length}`);
+    console.log(`Linked article candidates: ${articleSignals.length}`);
     console.log(`Signal candidates: ${uniquePosts.length}`);
     console.log(JSON.stringify(uniquePosts.slice(0, 12), null, 2));
     return;
@@ -57,6 +65,10 @@ async function main() {
       sourceName: post.sourceName,
       sourceUrl: post.url,
       observedAt: post.observedAt,
+      ...(post.category ? { category: post.category } : {}),
+      ...(post.confidence ? { confidence: post.confidence } : {}),
+      ...(post.fuelTypes?.length ? { fuelTypes: post.fuelTypes } : {}),
+      ...(post.note ? { note: post.note } : {}),
     });
     imported += 1;
   }
@@ -125,7 +137,8 @@ function parseTelegramPosts(html, source) {
     const dateMatch = block.match(/<time datetime="([^"]+)"/);
     if (!postMatch || !textMatch || !dateMatch) continue;
 
-    const text = normalizeText(htmlToText(textMatch[1]));
+    const textHtml = textMatch[1];
+    const text = normalizeText(htmlToText(textHtml));
     if (!text) continue;
 
     posts.push({
@@ -136,10 +149,237 @@ function parseTelegramPosts(html, source) {
       url: `https://t.me/${postMatch[1]}`,
       observedAt: new Date(dateMatch[1]).toISOString(),
       text,
+      links: extractLinks(textHtml, `https://t.me/${postMatch[1]}`).filter(isArticleLink),
     });
   }
 
   return posts;
+}
+
+async function loadLinkedArticleSignals(posts) {
+  const candidates = uniqueBy(
+    posts.flatMap((post) => (post.links || []).map((url) => ({ url, post }))),
+    (candidate) => candidate.url,
+  ).slice(0, SIGNAL_ARTICLE_MAX_PER_RUN);
+  const signals = [];
+
+  for (const candidate of candidates) {
+    const signal = await loadArticleSignal(candidate.url, candidate.post).catch((error) => {
+      console.warn(`Article ${candidate.url} skipped: ${error.message}`);
+      return null;
+    });
+    if (signal) signals.push(signal);
+    await sleep(250);
+  }
+
+  return signals;
+}
+
+async function loadArticleSignal(url, sourcePost) {
+  const html = await fetchText(url);
+  const article = parseArticleHtml(html, url);
+  const articleText = normalizeText(`${article.title}\n${article.text}`);
+  if (!articleText || !isRelevantSignal(articleText)) {
+    return null;
+  }
+
+  const observedAt = isFresh(article.publishedAt, SIGNAL_MAX_AGE_HOURS) ? article.publishedAt : sourcePost.observedAt;
+  const fuelTypes = extractFuelTypes(articleText);
+  const place = extractPlaceLabel(articleText);
+  const addressHints = extractAddressHints(article.text);
+  const count = extractStationCount(article.text);
+  const hasCardOnly = /топлив[а-яё]*\s+карт|исключительно\s+по\s+карт/i.test(article.text);
+  const articleHost = new URL(url).hostname.replace(/^www\./, "");
+  const noteParts = [];
+
+  if (place) noteParts.push(place);
+  if (count) noteParts.push(`${count} АЗС`);
+  noteParts.push(`есть ${fuelTypes.length ? fuelTypes.join(", ") : "топливо"}`);
+  if (hasCardOnly) noteParts.push("есть АЗС только по топливным картам");
+  if (addressHints.length) {
+    const extraCount = addressHints.length > 7 ? ` +${addressHints.length - 7}` : "";
+    noteParts.push(`где: ${addressHints.slice(0, 7).join(", ")}${extraCount}`);
+  }
+
+  return {
+    source: "article",
+    sourceName: `${sourcePost.sourceName} -> ${article.siteName || articleHost}`,
+    url,
+    observedAt,
+    text: normalizeText([article.title, sourcePost.text, article.text, `Пост-источник: ${sourcePost.url}`].join("\n\n")),
+    category: "fuel_available",
+    confidence: 0.84,
+    fuelTypes,
+    note: truncateText(noteParts.join("; "), 240),
+  };
+}
+
+function parseArticleHtml(html, url) {
+  const title = normalizeText(htmlToText(metaValue(html, ["og:title", "twitter:title"]) || titleValue(html) || ""));
+  const siteName = normalizeText(htmlToText(metaValue(html, ["og:site_name"]) || ""));
+  const publishedAt = parseDateValue(
+    metaValue(html, ["article:published_time", "datePublished", "pubdate", "publishdate"]) || timeValue(html),
+  );
+  const bodyHtml = articleBodyHtml(html);
+  const htmlText = normalizeText(articleHtmlToText(bodyHtml || html));
+  const schemaText = normalizeText(jsonLdArticleBody(html));
+  const text = htmlText.length > schemaText.length ? htmlText : schemaText || htmlText;
+
+  return {
+    url,
+    title,
+    siteName,
+    publishedAt,
+    text,
+  };
+}
+
+function articleBodyHtml(html) {
+  const entryMatch = html.match(
+    /<div\b[^>]*class=["'][^"']*(?:entry-content|article-content|post-content|js-entry-content)[^"']*["'][^>]*>([\s\S]*?)(?:<div\b[^>]*class=["'][^"']*(?:related-posts|entry-footer|post-navigation)|<\/article>|<\/main>)/i,
+  );
+  if (entryMatch) return entryMatch[1];
+
+  const articleMatch = html.match(/<article\b[^>]*>([\s\S]*?)<\/article>/i);
+  if (articleMatch) return articleMatch[1];
+
+  const mainMatch = html.match(/<main\b[^>]*>([\s\S]*?)<\/main>/i);
+  if (mainMatch) return mainMatch[1];
+
+  const bodyMatch = html.match(/<body\b[^>]*>([\s\S]*?)<\/body>/i);
+  return bodyMatch ? bodyMatch[1] : html;
+}
+
+function articleHtmlToText(html) {
+  return decodeHtml(
+    html
+      .replace(/<script\b[\s\S]*?<\/script>/gi, " ")
+      .replace(/<style\b[\s\S]*?<\/style>/gi, " ")
+      .replace(/<br\s*\/?>/gi, "\n")
+      .replace(/<\/(?:p|div|h[1-6]|li|blockquote)>/gi, "\n")
+      .replace(/<[^>]*>/g, " "),
+  );
+}
+
+function jsonLdArticleBody(html) {
+  const scripts = html.match(/<script\b[^>]*type=["']application\/ld\+json["'][^>]*>[\s\S]*?<\/script>/gi) || [];
+  for (const script of scripts) {
+    const raw = script.replace(/^<script\b[^>]*>/i, "").replace(/<\/script>$/i, "").trim();
+    if (!raw) continue;
+
+    try {
+      const body = findArticleBody(JSON.parse(raw));
+      if (body) return body;
+    } catch {
+      continue;
+    }
+  }
+  return "";
+}
+
+function findArticleBody(value) {
+  if (!value || typeof value !== "object") return "";
+  if (typeof value.articleBody === "string") return value.articleBody;
+
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const found = findArticleBody(item);
+      if (found) return found;
+    }
+    return "";
+  }
+
+  for (const item of Object.values(value)) {
+    const found = findArticleBody(item);
+    if (found) return found;
+  }
+  return "";
+}
+
+function metaValue(html, names) {
+  const wanted = new Set(names.map((name) => name.toLowerCase()));
+  const tags = html.match(/<meta\b[^>]*>/gi) || [];
+
+  for (const tag of tags) {
+    const key = attrValue(tag, "property") || attrValue(tag, "name") || attrValue(tag, "itemprop");
+    if (key && wanted.has(key.toLowerCase())) {
+      return attrValue(tag, "content");
+    }
+  }
+  return "";
+}
+
+function titleValue(html) {
+  const match = html.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i);
+  return match ? decodeHtml(match[1]) : "";
+}
+
+function timeValue(html) {
+  const match = html.match(/<time\b[^>]*datetime=(["'])(.*?)\1/i);
+  return match ? decodeHtml(match[2]) : "";
+}
+
+function attrValue(tag, name) {
+  const match = tag.match(new RegExp(`\\b${escapeRegex(name)}\\s*=\\s*("([^"]*)"|'([^']*)'|([^\\s>]+))`, "i"));
+  return match ? decodeHtml(match[2] || match[3] || match[4] || "") : "";
+}
+
+function parseDateValue(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "" : date.toISOString();
+}
+
+function extractLinks(html, baseUrl) {
+  const links = [];
+  const regex = /<a\b[^>]*\bhref=(["'])(.*?)\1/gi;
+  let match;
+
+  while ((match = regex.exec(html))) {
+    try {
+      const url = new URL(decodeHtml(match[2]).trim(), baseUrl);
+      if (!["http:", "https:"].includes(url.protocol)) continue;
+      url.hash = "";
+      for (const key of [...url.searchParams.keys()]) {
+        if (/^(utm_|yclid|fbclid|gclid|from)$/i.test(key)) url.searchParams.delete(key);
+      }
+      links.push(url.toString());
+    } catch {
+      continue;
+    }
+  }
+
+  return uniqueBy(links, (url) => url);
+}
+
+function isArticleLink(url) {
+  try {
+    const parsed = new URL(url);
+    const host = parsed.hostname.toLowerCase().replace(/^www\./, "");
+    const blockedHosts = [
+      "t.me",
+      "telegram.me",
+      "telegram.org",
+      "max.ru",
+      "vk.com",
+      "vk.ru",
+      "ok.ru",
+      "youtube.com",
+      "youtu.be",
+      "rutube.ru",
+      "instagram.com",
+      "facebook.com",
+      "x.com",
+      "twitter.com",
+      "whatsapp.com",
+    ];
+
+    if (blockedHosts.some((blocked) => host === blocked || host.endsWith(`.${blocked}`))) return false;
+    if (/\.(?:jpg|jpeg|png|gif|webp|svg|mp4|mov|mp3|zip|rar|7z)$/i.test(parsed.pathname)) return false;
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 async function postSignal(signal) {
@@ -161,13 +401,93 @@ function isRelevantSignal(text) {
   const lowered = text.toLowerCase().replace(/ё/g, "е");
   if (!/(бензин|топлив|азс|заправ|\bдт\b|дизел|очеред.*заправ|очеред.*азс|лукойл|роснефть|газпромнефть)/i.test(lowered)) return false;
   if (/(реклам|скидк|ваканси|такси|розыгрыш)/i.test(lowered)) return false;
-  return /(нет|есть|будет|привез|завоз|очеред|закрыт|работа|залил|заправил|кончил|дефицит|поставка|лампочка)/i.test(lowered);
+  return /(нет|есть|будет|привез|завоз|очеред|закрыт|работа|залил|заправил|кончил|дефицит|поставка|лампочка|налич|продаж|отпуска)/i.test(
+    lowered,
+  );
 }
 
 function isFresh(value, maxAgeHours) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return false;
   return Date.now() - date.getTime() <= maxAgeHours * 60 * 60 * 1000;
+}
+
+function extractFuelTypes(text) {
+  const lowered = text.toLowerCase().replace(/ё/g, "е");
+  const fuels = [];
+  if (/аи[-\s–—]?100/.test(lowered)) fuels.push("АИ-100");
+  if (/аи[-\s–—]?98/.test(lowered)) fuels.push("АИ-98");
+  if (/аи[-\s–—]?95/.test(lowered)) fuels.push("АИ-95");
+  if (/аи[-\s–—]?92/.test(lowered)) fuels.push("АИ-92");
+  if (/\bдт\b|дизел/.test(lowered)) fuels.push("ДТ");
+  if (/\bгаз\b|метан|пропан/.test(lowered)) fuels.push("Газ");
+  if (!fuels.length && /бензин|топлив|заправ/.test(lowered)) fuels.push("Бензин");
+  return fuels;
+}
+
+function extractPlaceLabel(text) {
+  const match = text.match(
+    /(?:^|[\s,.;:])в\s+(Краснодаре|Новороссийске|Темрюке|Крымске|Анапе|Геленджике|Сочи|Туапсе|Ейске|Армавире|Славянске-на-Кубани)(?=$|[\s,.;:])/i,
+  );
+  return match ? `в ${capitalizeFirst(match[1].toLowerCase())}` : "";
+}
+
+function extractStationCount(text) {
+  const match = text.match(/\b(?:на\s+)?(\d{1,3})\s+(?:АЗС|автозаправ|заправк)/i);
+  return match ? match[1] : "";
+}
+
+function extractAddressHints(text) {
+  const sentences = uniqueBy(
+    text
+      .replace(/\r/g, "")
+      .split(/\n+|(?<=[.!?])\s+/)
+      .map((item) => normalizeText(item)),
+    (item) => item.toLowerCase(),
+  );
+  const hints = [];
+
+  for (const sentence of sentences) {
+    if (!/(улиц|ул\.|шоссе|проспект|пр-т|сел[аое]|сёл[аое]|станиц|пос[её]лк|км)/i.test(sentence)) continue;
+    if (!/(АЗС|заправ|топлив|бензин|отпуска|работа)/i.test(sentence)) continue;
+    hints.push(...extractAddressPieces(sentence));
+  }
+
+  return uniqueBy(hints, (item) => item.toLowerCase()).slice(0, 12);
+}
+
+function extractAddressPieces(sentence) {
+  const markerMatch = sentence.match(/(?:расположены|находятся|адрес[аы]?|АЗС\s+на|заправк[а-яё]*\s+на)\s+(.+)/i);
+  let chunk = markerMatch ? markerMatch[1] : sentence;
+  chunk = chunk
+    .replace(/\s+(?:отпускают|отпускали|дают|дали|сообщил[а-яё]*|жителей\s+просят|куда\s+не\s+стоит)(?:\s|$)[\s\S]*$/i, "")
+    .replace(/(^|[\s,.;:])а\s+также(?=$|[\s,.;:])/gi, ",")
+    .replace(/(^|[\s,.;:])и(?=$|[\s,.;:])/gi, ",");
+
+  return chunk
+    .split(",")
+    .map(cleanAddressHint)
+    .filter(Boolean);
+}
+
+function cleanAddressHint(value) {
+  const cleaned = value
+    .replace(/^[-–—:;.\s]+/g, "")
+    .replace(/\s+/g, " ")
+    .replace(
+      /^(?:(?:на|в|во|по)\s+)*(?:улицах?|улице|ул\.?|проспекте?|проспект|пр-т|селах?|сёлах?|селе|пос[её]лке|станице|ст\.?)\s+/i,
+      "",
+    )
+    .replace(/[.;,:\s]+$/g, "")
+    .trim();
+
+  if (cleaned.length < 3 || cleaned.length > 80) return "";
+  if (/(АЗС|заправк|топлив|бензин|работающ|расположен|исключительно)$/i.test(cleaned)) return "";
+  return capitalizeFirst(cleaned);
+}
+
+function capitalizeFirst(value) {
+  return value ? value[0].toUpperCase() + value.slice(1) : "";
 }
 
 function htmlToText(html) {
@@ -206,6 +526,15 @@ function normalizeText(value) {
     .replace(/\n\s+/g, "\n")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
+}
+
+function truncateText(value, maxLength) {
+  if (value.length <= maxLength) return value;
+  return `${value.slice(0, maxLength - 3).trim()}...`;
+}
+
+function escapeRegex(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 function parseTelegramSources(value) {
