@@ -182,6 +182,15 @@ scripts/start-public-signals-sync.sh
 - `chp_krd` - ЧП Краснодар
 - `kuban24` - Кубань 24
 - `krd_chp` - Новости Краснодара
+- `news_93_ru` - 93.RU Краснодар
+- `krasnodarkray1` - Краснодар и край
+- `opershtab23` - Оперштаб Краснодарского края
+- `kubinform` - Кубань Информ
+- `kub_news_ru` - Кубанские новости
+- `kubanru23` - Кубань 23
+- `pva_anapa` - ПВА Анапа
+- `tipichkras` - Типичный Краснодар 2
+- `krd_gorod_space` - Город Краснодар
 
 Дополнительные публичные Telegram-каналы можно добавить через `.collector.env`:
 
@@ -194,6 +203,8 @@ RSS-ленты сайтов или форумов можно добавить т
 ```bash
 SIGNAL_RSS_FEEDS=https://example.com/rss|Название источника,https://forum.example.com/rss|Форум
 ```
+
+По умолчанию подключены RSS `https://kubanpress.ru/rss.xml` и `https://kubnews.ru/rss/`. Для RSS импортёр также пробует открыть ссылку новости и разобрать полный текст статьи.
 
 Переменные для ссылок из сообщений:
 

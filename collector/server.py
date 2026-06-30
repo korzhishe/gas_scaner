@@ -479,10 +479,11 @@ def save_signal(payload, remote_addr):
     source_url = clean_text(payload.get("sourceUrl") or payload.get("url"))
 
     with connect() as conn:
-        station_id = clean_text(payload.get("stationId") or payload.get("station_id"))
+        requested_station_id = clean_text(payload.get("stationId") or payload.get("station_id"))
+        station_id = requested_station_id
         if station_id and not conn.execute("SELECT 1 FROM stations WHERE id = ?", (station_id,)).fetchone():
             station_id = ""
-        if not station_id:
+        if not station_id and not payload.get("skipStationMatch"):
             station_id = match_signal_station(conn, raw_text)
 
         parsed = parse_signal(raw_text)
@@ -503,7 +504,10 @@ def save_signal(payload, remote_addr):
                 (raw_text, source, observed_at),
             ).fetchone()
         if existing:
-            station_id = station_id or existing["station_id"] or ""
+            if payload.get("skipStationMatch"):
+                station_id = ""
+            elif requested_station_id:
+                station_id = station_id or existing["station_id"] or ""
             conn.execute(
                 """
                 UPDATE fuel_signals
@@ -692,6 +696,9 @@ def match_signal_station(conn, raw_text):
     if hinted:
         return hinted
 
+    if not has_station_specific_hint(text):
+        return ""
+
     best = {"id": "", "score": 0}
     for row in rows:
         fields = [row["name"], row["brand"], row["address"]]
@@ -737,6 +744,26 @@ def match_station_by_hints(rows, text):
                 return row["id"]
 
     return ""
+
+
+def has_station_specific_hint(text):
+    brands = (
+        "лукойл",
+        "lukoil",
+        "роснефть",
+        "газпромнефть",
+        "газпром",
+        "татнефть",
+        "teboil",
+        "rusoil",
+        "ирбис",
+        "pnb",
+    )
+    address_or_landmark = re.search(
+        r"улиц|ул\s|проспект|шоссе|трасс|километр|\bкм\b|тц|пять\s+звезд|пяти\s+звезд|минск|чекистов|уральск|фадеев|ростовск|дзержинск|западн",
+        text,
+    )
+    return bool(address_or_landmark and any(brand in text for brand in brands))
 
 
 def normalize_match_text(value):

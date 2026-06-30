@@ -7,10 +7,10 @@ const SIGNAL_ARTICLE_MAX_PER_RUN = Number(env("SIGNAL_ARTICLE_MAX_PER_RUN", "16"
 const TELEGRAM_SOURCES = parseTelegramSources(
   env(
     "SIGNAL_TELEGRAM_CHANNELS",
-    "krd_tipich_ru:Типичный Краснодар,krddtp1:КРДДТП,KrasnodarUMR:Краснодар ЮМР,chp_krd:ЧП Краснодар,kuban24:Кубань 24,krd_chp:Новости Краснодара",
+    "krd_tipich_ru:Типичный Краснодар,krddtp1:КРДДТП,KrasnodarUMR:Краснодар ЮМР,chp_krd:ЧП Краснодар,kuban24:Кубань 24,krd_chp:Новости Краснодара,news_93_ru:93.RU Краснодар,krasnodarkray1:Краснодар и край,opershtab23:Оперштаб Краснодарского края,kubinform:Кубань Информ,kub_news_ru:Кубанские новости,kubanru23:Кубань 23,pva_anapa:ПВА Анапа,tipichkras:Типичный Краснодар 2,krd_gorod_space:Город Краснодар",
   ),
 );
-const RSS_SOURCES = parseNamedUrls(env("SIGNAL_RSS_FEEDS", ""));
+const RSS_SOURCES = parseNamedUrls(env("SIGNAL_RSS_FEEDS", "https://kubanpress.ru/rss.xml|Кубань 24,https://kubnews.ru/rss/|Кубанские новости"));
 const DRY_RUN = process.argv.includes("--dry-run");
 
 main().catch((error) => {
@@ -45,7 +45,7 @@ async function main() {
     .sort((a, b) => Date.parse(b.observedAt) - Date.parse(a.observedAt));
 
   const articleSignals = SIGNAL_PARSE_LINKS ? await loadLinkedArticleSignals(sourceSignals) : [];
-  const uniquePosts = uniqueBy([...sourceSignals, ...articleSignals], (post) => post.url).sort(
+  const uniquePosts = uniqueBy([...articleSignals, ...sourceSignals], (post) => post.url).sort(
     (a, b) => Date.parse(b.observedAt) - Date.parse(a.observedAt),
   );
 
@@ -69,6 +69,7 @@ async function main() {
       ...(post.confidence ? { confidence: post.confidence } : {}),
       ...(post.fuelTypes?.length ? { fuelTypes: post.fuelTypes } : {}),
       ...(post.note ? { note: post.note } : {}),
+      ...(post.skipStationMatch ? { skipStationMatch: true } : {}),
     });
     imported += 1;
   }
@@ -108,6 +109,7 @@ async function loadRssSource(source) {
         url: link,
         observedAt: Number.isNaN(date.getTime()) ? new Date().toISOString() : date.toISOString(),
         text: normalizeText(`${title}\n${description}`),
+        links: isArticleLink(link) ? [link] : [],
       };
     })
     .filter((post) => post.text);
@@ -178,23 +180,29 @@ async function loadLinkedArticleSignals(posts) {
 async function loadArticleSignal(url, sourcePost) {
   const html = await fetchText(url);
   const article = parseArticleHtml(html, url);
-  const articleText = normalizeText(`${article.title}\n${article.text}`);
-  if (!articleText || !isRelevantSignal(articleText)) {
+  const primaryText = primaryArticleText(article.text);
+  const articleText = normalizeText(`${article.title}\n${primaryText}`);
+  if (!articleText || !isRelevantSignal(articleText) || !/(АЗС|заправ)/i.test(articleText)) {
+    return null;
+  }
+
+  const parsed = classifySignalText(articleText);
+  if (parsed.category === "unknown") {
     return null;
   }
 
   const observedAt = isFresh(article.publishedAt, SIGNAL_MAX_AGE_HOURS) ? article.publishedAt : sourcePost.observedAt;
-  const fuelTypes = extractFuelTypes(articleText);
   const place = extractPlaceLabel(articleText);
-  const addressHints = extractAddressHints(article.text);
-  const count = extractStationCount(article.text);
-  const hasCardOnly = /топлив[а-яё]*\s+карт|исключительно\s+по\s+карт/i.test(article.text);
+  const addressHints = extractAddressHints(primaryText);
+  const count = extractStationCount(primaryText);
+  const hasCardOnly = /топлив[а-яё]*\s+карт|исключительно\s+по\s+карт/i.test(primaryText);
   const articleHost = new URL(url).hostname.replace(/^www\./, "");
   const noteParts = [];
 
   if (place) noteParts.push(place);
   if (count) noteParts.push(`${count} АЗС`);
-  noteParts.push(`есть ${fuelTypes.length ? fuelTypes.join(", ") : "топливо"}`);
+  noteParts.push(articleSignalLabel(parsed));
+  if (parsed.fuelTypes.length) noteParts.push(parsed.fuelTypes.join(", "));
   if (hasCardOnly) noteParts.push("есть АЗС только по топливным картам");
   if (addressHints.length) {
     const extraCount = addressHints.length > 7 ? ` +${addressHints.length - 7}` : "";
@@ -206,12 +214,75 @@ async function loadArticleSignal(url, sourcePost) {
     sourceName: `${sourcePost.sourceName} -> ${article.siteName || articleHost}`,
     url,
     observedAt,
-    text: normalizeText([article.title, sourcePost.text, article.text, `Пост-источник: ${sourcePost.url}`].join("\n\n")),
-    category: "fuel_available",
-    confidence: 0.84,
-    fuelTypes,
+    text: normalizeText([article.title, sourcePost.text, primaryText, `Пост-источник: ${sourcePost.url}`].join("\n\n")),
+    category: parsed.category,
+    confidence: parsed.confidence,
+    fuelTypes: parsed.fuelTypes,
     note: truncateText(noteParts.join("; "), 240),
+    skipStationMatch: true,
   };
+}
+
+function primaryArticleText(text) {
+  return normalizeText(
+    text
+      .split(/(?:←|Следующая новость|Похожие новости|Комментарии|Поделиться:|Рейтинг статьи:)/i)[0]
+      .slice(0, 7000),
+  );
+}
+
+function classifySignalText(text) {
+  const lowered = text.toLowerCase().replace(/ё/g, "е");
+  const fuelTypes = extractFuelTypes(text);
+  const hasDelivery = /(будет|привез|привоз|завоз|поставка|ожида)/i.test(lowered);
+  const hasQueue = /(очеред|занима[ею]т|сто[ия]т\s+.*азс|колонн|часами\s+сто)/i.test(lowered);
+  const hasClosed = /(закрыт|не\s+работа|много\s+закрытых)/i.test(lowered);
+  const hasNoFuel = /(нет\s+(бенз|топлив|дт|95|92)|без\s+(бенз|топлив)|кончил|нельзя\s+купить|не\s+отпускают\s+топлив|топлив[а-я]*\s+нет)/i.test(
+    lowered,
+  );
+  const hasAvailable =
+    /(есть\s+(бенз|топлив|дт|95|92)|есть\s+в\s+продаже|в\s+наличии|залил|заправил|заправляют|можно\s+заправ|чтобы\s+заправ|выдают|отпускают|отпускали|продают)/i.test(
+      lowered,
+    );
+
+  let category = "unknown";
+  let confidence = 0.45;
+  if (hasDelivery) {
+    category = "delivery_expected";
+    confidence = 0.72;
+  } else if (hasAvailable) {
+    category = "fuel_available";
+    confidence = 0.75;
+  } else if (hasNoFuel) {
+    category = "no_fuel";
+    confidence = 0.72;
+  } else if (hasClosed) {
+    category = "closed_many";
+    confidence = 0.65;
+  } else if (hasQueue) {
+    category = "queue";
+    confidence = 0.62;
+  }
+
+  const queueLevel = hasQueue ? (/огром|больш|много|километр|часами|несколько\s+час/i.test(lowered) ? "high" : "medium") : "";
+  if (hasQueue && ["delivery_expected", "fuel_available"].includes(category)) {
+    confidence = Math.min(1, confidence + 0.08);
+  }
+
+  return { category, confidence, queueLevel, fuelTypes };
+}
+
+function articleSignalLabel(parsed) {
+  return (
+    {
+      delivery_expected: "ожидается привоз",
+      fuel_available: "есть топливо",
+      no_fuel: "нет топлива",
+      closed_many: "есть закрытые АЗС",
+      queue: parsed.queueLevel === "high" ? "большая очередь" : "есть очередь",
+      unknown: "требует проверки",
+    }[parsed.category] || "требует проверки"
+  );
 }
 
 function parseArticleHtml(html, url) {
