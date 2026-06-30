@@ -10,6 +10,7 @@
 - `collect.html` - форма оператора для обновления статуса, цен, наличия и пробок.
 - `scripts/import-open-sources.mjs` - импорт цен из открытых источников, сейчас из RUSSIABASE.
 - `scripts/import-osm-opening-hours.mjs` - импорт расписаний из OpenStreetMap `opening_hours` и расчет `open/closed` на текущее время Краснодара.
+- `scripts/import-2gis-opening-hours.mjs` - импорт расписаний из 2ГИС. Первый запуск сопоставляет АЗС с id 2ГИС, последующие запуски обновляют расписания пачкой через `items/byid`.
 - `scripts/import-benzup.mjs` - импорт АЗС и цен из Benzup API в collector.
 - `scripts/update-stations.mjs` - обновление `data/stations.json` из внешнего JSON API.
 - `.github/workflows/pages.yml` - деплой на GitHub Pages.
@@ -137,6 +138,48 @@ scripts/start-osm-hours-sync.sh
 ```
 
 Если для станции в OSM нет `opening_hours`, сайт показывает `Статус неизвестен` и `График не указан`, а не считает такую АЗС закрытой.
+
+## Импорт расписаний из 2ГИС
+
+2ГИС используется как дополнительный источник расписаний, когда OSM не знает график или нужно уточнить карточку. Скрипт не публикует ключ в клиентский код: ключ хранится только на сервере в `.collector.env`.
+
+Добавьте ключ:
+
+```bash
+DGIS_API_KEY=your-2gis-api-key
+```
+
+Первый запуск с поиском соответствий:
+
+```bash
+scripts/start-2gis-hours-sync.sh --refresh-matches
+```
+
+Он создаст `data/2gis-matches.json` с соответствиями `stationId -> 2gis id`. После этого обычное обновление делает один запрос `items/byid` для всех сопоставленных АЗС:
+
+```bash
+scripts/start-2gis-hours-sync.sh
+```
+
+Проверка без записи:
+
+```bash
+scripts/start-2gis-hours-sync.sh --dry-run
+```
+
+Переменные настройки:
+
+- `DGIS_BASE_URL` - по умолчанию `https://catalog.api.2gis.com/3.0`.
+- `DGIS_RUBRIC_ID` - рубрика `Заправочные станции`, по умолчанию `18547`.
+- `DGIS_MATCH_RADIUS_M` - радиус первичного сопоставления, по умолчанию `450`.
+- `DGIS_MATCH_FILE` - файл соответствий, по умолчанию `data/2gis-matches.json`.
+- `DGIS_TIME_ZONE` - по умолчанию `Europe/Moscow`.
+
+На текущем сервере 2ГИС обновляется раз в час:
+
+```cron
+7 * * * * cd /home/deploy/projects/gas_scaner && scripts/start-2gis-hours-sync.sh >> /tmp/gas_scaner_2gis_hours.log 2>&1
+```
 
 ## Импорт из Benzup
 

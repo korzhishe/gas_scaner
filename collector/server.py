@@ -302,7 +302,7 @@ def export_payload():
 
         return {
             "generatedAt": utc_now(),
-            "sourceLabel": "Collector: цены RUSSIABASE, расписания OpenStreetMap",
+            "sourceLabel": "Collector: цены RUSSIABASE, расписания OpenStreetMap/2ГИС",
             "stations": stations,
         }
 

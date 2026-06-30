@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-06-30T09:28:03Z",
-  "sourceLabel": "Collector: цены RUSSIABASE, расписания OpenStreetMap",
+  "generatedAt": "2026-06-30T09:42:02Z",
+  "sourceLabel": "Collector: цены RUSSIABASE, расписания OpenStreetMap/2ГИС",
   "stations": [
     {
       "id": "russiabase-14326868",
@@ -14,7 +14,7 @@
       },
       "status": "open",
       "openUntil": "24/7",
-      "updatedAt": "2026-06-30T09:00:00.000Z",
+      "updatedAt": "2026-06-30T09:41:28.933Z",
       "traffic": {
         "score": 0,
         "label": "Нет данных",
@@ -51,9 +51,9 @@
         "lat": 45.08052,
         "lng": 38.975128
       },
-      "status": "unknown",
-      "openUntil": "нет данных",
-      "updatedAt": "2026-06-30T09:00:00.000Z",
+      "status": "open",
+      "openUntil": "Mon-Sun 07:00-19:00",
+      "updatedAt": "2026-06-30T09:41:28.934Z",
       "traffic": {
         "score": 0,
         "label": "Нет данных",
@@ -97,9 +97,9 @@
         "lat": 45.011982,
         "lng": 39.068601
       },
-      "status": "unknown",
-      "openUntil": "нет данных",
-      "updatedAt": "2026-06-30T09:00:00.000Z",
+      "status": "open",
+      "openUntil": "24/7",
+      "updatedAt": "2026-06-30T09:41:28.934Z",
       "traffic": {
         "score": 0,
         "label": "Нет данных",
@@ -138,7 +138,7 @@
       },
       "status": "open",
       "openUntil": "24/7",
-      "updatedAt": "2026-06-30T09:00:00.000Z",
+      "updatedAt": "2026-06-30T09:41:28.935Z",
       "traffic": {
         "score": 0,
         "label": "Нет данных",
@@ -182,7 +182,7 @@
       },
       "status": "open",
       "openUntil": "24/7",
-      "updatedAt": "2026-06-30T09:00:00.000Z",
+      "updatedAt": "2026-06-30T09:41:28.935Z",
       "traffic": {
         "score": 0,
         "label": "Нет данных",
@@ -226,7 +226,7 @@
       },
       "status": "open",
       "openUntil": "24/7",
-      "updatedAt": "2026-06-30T09:00:00.000Z",
+      "updatedAt": "2026-06-30T09:41:28.935Z",
       "traffic": {
         "score": 0,
         "label": "Нет данных",
@@ -270,7 +270,7 @@
       },
       "status": "open",
       "openUntil": "24/7",
-      "updatedAt": "2026-06-30T09:00:00.000Z",
+      "updatedAt": "2026-06-30T09:41:28.935Z",
       "traffic": {
         "score": 0,
         "label": "Нет данных",
@@ -314,7 +314,7 @@
       },
       "status": "open",
       "openUntil": "24/7",
-      "updatedAt": "2026-06-30T09:00:00.000Z",
+      "updatedAt": "2026-06-30T09:41:28.935Z",
       "traffic": {
         "score": 0,
         "label": "Нет данных",
@@ -359,7 +359,7 @@
       },
       "status": "open",
       "openUntil": "24/7",
-      "updatedAt": "2026-06-30T09:00:00.000Z",
+      "updatedAt": "2026-06-30T09:41:28.935Z",
       "traffic": {
         "score": 0,
         "label": "Нет данных",
@@ -399,7 +399,7 @@
       },
       "status": "open",
       "openUntil": "24/7",
-      "updatedAt": "2026-06-30T09:00:00.000Z",
+      "updatedAt": "2026-06-30T09:41:28.936Z",
       "traffic": {
         "score": 0,
         "label": "Нет данных",
@@ -441,7 +441,7 @@
       },
       "status": "open",
       "openUntil": "24/7",
-      "updatedAt": "2026-06-30T09:00:00.000Z",
+      "updatedAt": "2026-06-30T09:41:28.936Z",
       "traffic": {
         "score": 0,
         "label": "Нет данных",
@@ -488,7 +488,7 @@
       },
       "status": "open",
       "openUntil": "24/7",
-      "updatedAt": "2026-06-30T09:00:00.000Z",
+      "updatedAt": "2026-06-30T09:41:28.936Z",
       "traffic": {
         "score": 0,
         "label": "Нет данных",
@@ -530,7 +530,7 @@
       },
       "status": "open",
       "openUntil": "24/7",
-      "updatedAt": "2026-06-30T09:00:00.000Z",
+      "updatedAt": "2026-06-30T09:41:28.936Z",
       "traffic": {
         "score": 0,
         "label": "Нет данных",
@@ -575,7 +575,7 @@
       },
       "status": "open",
       "openUntil": "24/7",
-      "updatedAt": "2026-06-30T09:00:00.000Z",
+      "updatedAt": "2026-06-30T09:41:28.937Z",
       "traffic": {
         "score": 0,
         "label": "Нет данных",
@@ -614,7 +614,7 @@
       },
       "status": "open",
       "openUntil": "24/7",
-      "updatedAt": "2026-06-30T09:00:00.000Z",
+      "updatedAt": "2026-06-30T09:41:28.937Z",
       "traffic": {
         "score": 0,
         "label": "Нет данных",
@@ -658,7 +658,7 @@
       },
       "status": "open",
       "openUntil": "24/7",
-      "updatedAt": "2026-06-30T09:00:00.000Z",
+      "updatedAt": "2026-06-30T09:41:28.937Z",
       "traffic": {
         "score": 0,
         "label": "Нет данных",
@@ -702,7 +702,7 @@
       },
       "status": "open",
       "openUntil": "24/7",
-      "updatedAt": "2026-06-30T09:00:00.000Z",
+      "updatedAt": "2026-06-30T09:41:28.937Z",
       "traffic": {
         "score": 0,
         "label": "Нет данных",
@@ -746,7 +746,7 @@
       },
       "status": "open",
       "openUntil": "24/7",
-      "updatedAt": "2026-06-30T09:00:00.000Z",
+      "updatedAt": "2026-06-30T09:41:28.937Z",
       "traffic": {
         "score": 0,
         "label": "Нет данных",
@@ -790,7 +790,7 @@
       },
       "status": "open",
       "openUntil": "24/7",
-      "updatedAt": "2026-06-30T09:00:00.000Z",
+      "updatedAt": "2026-06-30T09:41:28.938Z",
       "traffic": {
         "score": 0,
         "label": "Нет данных",
@@ -834,7 +834,7 @@
       },
       "status": "open",
       "openUntil": "24/7",
-      "updatedAt": "2026-06-30T09:00:00.000Z",
+      "updatedAt": "2026-06-30T09:41:28.938Z",
       "traffic": {
         "score": 0,
         "label": "Нет данных",
@@ -878,7 +878,7 @@
       },
       "status": "open",
       "openUntil": "24/7",
-      "updatedAt": "2026-06-30T09:00:00.000Z",
+      "updatedAt": "2026-06-30T09:41:28.938Z",
       "traffic": {
         "score": 0,
         "label": "Нет данных",
@@ -920,9 +920,9 @@
         "lat": 45.014775,
         "lng": 39.104882
       },
-      "status": "unknown",
-      "openUntil": "нет данных",
-      "updatedAt": "2026-06-30T09:00:00.000Z",
+      "status": "open",
+      "openUntil": "Mon-Sun 00:00-04:50,05:10-24:00",
+      "updatedAt": "2026-06-30T09:41:28.939Z",
       "traffic": {
         "score": 0,
         "label": "Нет данных",
@@ -961,7 +961,7 @@
       },
       "status": "open",
       "openUntil": "24/7",
-      "updatedAt": "2026-06-30T09:00:00.000Z",
+      "updatedAt": "2026-06-30T09:41:28.939Z",
       "traffic": {
         "score": 0,
         "label": "Нет данных",
@@ -1000,7 +1000,7 @@
       },
       "status": "open",
       "openUntil": "24/7",
-      "updatedAt": "2026-06-30T09:00:00.000Z",
+      "updatedAt": "2026-06-30T09:41:28.939Z",
       "traffic": {
         "score": 0,
         "label": "Нет данных",
@@ -1048,7 +1048,7 @@
       },
       "status": "open",
       "openUntil": "24/7",
-      "updatedAt": "2026-06-30T09:00:00.000Z",
+      "updatedAt": "2026-06-30T09:41:28.939Z",
       "traffic": {
         "score": 0,
         "label": "Нет данных",
@@ -1085,9 +1085,9 @@
         "lat": 45.023776,
         "lng": 39.009637
       },
-      "status": "unknown",
-      "openUntil": "нет данных",
-      "updatedAt": "2026-06-30T09:00:00.000Z",
+      "status": "open",
+      "openUntil": "24/7",
+      "updatedAt": "2026-06-30T09:41:28.939Z",
       "traffic": {
         "score": 0,
         "label": "Нет данных",

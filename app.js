@@ -370,16 +370,23 @@ function formatSchedule(schedule) {
 
   const dayLabels = {
     Mo: "Пн",
+    Mon: "Пн",
     Tu: "Вт",
+    Tue: "Вт",
     We: "Ср",
+    Wed: "Ср",
     Th: "Чт",
+    Thu: "Чт",
     Fr: "Пт",
+    Fri: "Пт",
     Sa: "Сб",
+    Sat: "Сб",
     Su: "Вс",
+    Sun: "Вс",
     PH: "Праздники",
   };
   const formatted = schedule
-    .replace(/\b(Mo|Tu|We|Th|Fr|Sa|Su|PH)\b/g, (day) => dayLabels[day] || day)
+    .replace(/\b(Mon|Tue|Wed|Thu|Fri|Sat|Sun|Mo|Tu|We|Th|Fr|Sa|Su|PH)\b/g, (day) => dayLabels[day] || day)
     .replace(/\boff\b/gi, "выходной")
     .replace(/\bclosed\b/gi, "закрыто")
     .replace(/00:00\s*-\s*24:00/g, "круглосуточно")
