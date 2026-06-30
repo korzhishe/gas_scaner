@@ -396,6 +396,11 @@ select {
   background: var(--red-soft);
 }
 
+.traffic-unknown {
+  color: var(--muted);
+  background: #eef2ef;
+}
+
 .map-pane {
   position: relative;
   min-width: 0;

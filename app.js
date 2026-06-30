@@ -133,6 +133,7 @@ function normalizeStations(stations) {
         score: Number(station.traffic?.score ?? 0),
         label: station.traffic?.label || "Нет данных",
         delayMin: Number(station.traffic?.delayMin ?? 0),
+        hasData: station.traffic?.label !== "Нет данных",
       },
     }));
 }
@@ -214,6 +215,10 @@ function applyFilters(stations) {
       if (!hasFuel) return false;
     }
 
+    if (state.filters.traffic !== "all" && !station.traffic.hasData) {
+      return false;
+    }
+
     if (!matchesTraffic(station.traffic.score, state.filters.traffic)) {
       return false;
     }
@@ -236,6 +241,10 @@ function applyFilters(stations) {
 
     if (state.filters.sort === "updated") {
       return Date.parse(b.updatedAt || 0) - Date.parse(a.updatedAt || 0);
+    }
+
+    if (a.traffic.hasData !== b.traffic.hasData) {
+      return a.traffic.hasData ? -1 : 1;
     }
 
     return a.traffic.score - b.traffic.score;
@@ -262,10 +271,11 @@ function renderSummary() {
     .flatMap((station) => station.fuels)
     .filter((fuel) => fuel.type === "АИ-92" && fuel.available && fuel.price)
     .map((fuel) => fuel.price);
+  const trafficStations = openStations.filter((station) => station.traffic.hasData);
   const avgTraffic =
-    openStations.length === 0
+    trafficStations.length === 0
       ? null
-      : openStations.reduce((sum, station) => sum + station.traffic.score, 0) / openStations.length;
+      : trafficStations.reduce((sum, station) => sum + station.traffic.score, 0) / trafficStations.length;
 
   els.openCount.textContent = String(openStations.length);
   els.bestAi92.textContent = ai92.length ? `${Math.min(...ai92).toFixed(2)} ₽` : "-";
@@ -321,6 +331,15 @@ function renderFuel(fuel) {
 }
 
 function renderTraffic(traffic) {
+  if (!traffic.hasData) {
+    return `
+      <span class="traffic-pill traffic-unknown">
+        <i data-lucide="car-front" aria-hidden="true"></i>
+        <span>Нет данных</span>
+      </span>
+    `;
+  }
+
   const level = trafficClass(traffic.score);
   return `
     <span class="traffic-pill ${level}">
@@ -335,7 +354,7 @@ function renderMap() {
   trafficLayer.clearLayers();
 
   state.filtered.forEach((station) => {
-    if (state.trafficVisible) {
+    if (state.trafficVisible && station.traffic.hasData) {
       L.circle([station.coords.lat, station.coords.lng], {
         radius: 520 + station.traffic.score * 55,
         color: trafficColor(station.traffic.score),

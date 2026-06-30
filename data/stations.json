@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-30T09:08:01Z",
+  "generatedAt": "2026-06-30T09:12:28Z",
   "sourceLabel": "Собственный collector API: ручные отчеты и импорт",
   "stations": [
     {
@@ -17,7 +17,7 @@
       "updatedAt": "2026-06-30T09:00:00.000Z",
       "traffic": {
         "score": 0,
-        "label": "Свободно",
+        "label": "Нет данных",
         "delayMin": 0
       },
       "fuels": [
@@ -56,7 +56,7 @@
       "updatedAt": "2026-06-30T09:00:00.000Z",
       "traffic": {
         "score": 0,
-        "label": "Свободно",
+        "label": "Нет данных",
         "delayMin": 0
       },
       "fuels": [
@@ -102,7 +102,7 @@
       "updatedAt": "2026-06-30T09:00:00.000Z",
       "traffic": {
         "score": 0,
-        "label": "Свободно",
+        "label": "Нет данных",
         "delayMin": 0
       },
       "fuels": [
@@ -141,7 +141,7 @@
       "updatedAt": "2026-06-30T09:00:00.000Z",
       "traffic": {
         "score": 0,
-        "label": "Свободно",
+        "label": "Нет данных",
         "delayMin": 0
       },
       "fuels": [
@@ -185,7 +185,7 @@
       "updatedAt": "2026-06-30T09:00:00.000Z",
       "traffic": {
         "score": 0,
-        "label": "Свободно",
+        "label": "Нет данных",
         "delayMin": 0
       },
       "fuels": [
@@ -229,7 +229,7 @@
       "updatedAt": "2026-06-30T09:00:00.000Z",
       "traffic": {
         "score": 0,
-        "label": "Свободно",
+        "label": "Нет данных",
         "delayMin": 0
       },
       "fuels": [
@@ -273,7 +273,7 @@
       "updatedAt": "2026-06-30T09:00:00.000Z",
       "traffic": {
         "score": 0,
-        "label": "Свободно",
+        "label": "Нет данных",
         "delayMin": 0
       },
       "fuels": [
@@ -317,7 +317,7 @@
       "updatedAt": "2026-06-30T09:00:00.000Z",
       "traffic": {
         "score": 0,
-        "label": "Свободно",
+        "label": "Нет данных",
         "delayMin": 0
       },
       "fuels": [
@@ -362,7 +362,7 @@
       "updatedAt": "2026-06-30T09:00:00.000Z",
       "traffic": {
         "score": 0,
-        "label": "Свободно",
+        "label": "Нет данных",
         "delayMin": 0
       },
       "fuels": [
@@ -402,7 +402,7 @@
       "updatedAt": "2026-06-30T09:00:00.000Z",
       "traffic": {
         "score": 0,
-        "label": "Свободно",
+        "label": "Нет данных",
         "delayMin": 0
       },
       "fuels": [
@@ -444,7 +444,7 @@
       "updatedAt": "2026-06-30T09:00:00.000Z",
       "traffic": {
         "score": 0,
-        "label": "Свободно",
+        "label": "Нет данных",
         "delayMin": 0
       },
       "fuels": [
@@ -491,7 +491,7 @@
       "updatedAt": "2026-06-30T09:00:00.000Z",
       "traffic": {
         "score": 0,
-        "label": "Свободно",
+        "label": "Нет данных",
         "delayMin": 0
       },
       "fuels": [
@@ -533,7 +533,7 @@
       "updatedAt": "2026-06-30T09:00:00.000Z",
       "traffic": {
         "score": 0,
-        "label": "Свободно",
+        "label": "Нет данных",
         "delayMin": 0
       },
       "fuels": [
@@ -578,7 +578,7 @@
       "updatedAt": "2026-06-30T09:00:00.000Z",
       "traffic": {
         "score": 0,
-        "label": "Свободно",
+        "label": "Нет данных",
         "delayMin": 0
       },
       "fuels": [
@@ -617,7 +617,7 @@
       "updatedAt": "2026-06-30T09:00:00.000Z",
       "traffic": {
         "score": 0,
-        "label": "Свободно",
+        "label": "Нет данных",
         "delayMin": 0
       },
       "fuels": [
@@ -661,7 +661,7 @@
       "updatedAt": "2026-06-30T09:00:00.000Z",
       "traffic": {
         "score": 0,
-        "label": "Свободно",
+        "label": "Нет данных",
         "delayMin": 0
       },
       "fuels": [
@@ -705,7 +705,7 @@
       "updatedAt": "2026-06-30T09:00:00.000Z",
       "traffic": {
         "score": 0,
-        "label": "Свободно",
+        "label": "Нет данных",
         "delayMin": 0
       },
       "fuels": [
@@ -749,7 +749,7 @@
       "updatedAt": "2026-06-30T09:00:00.000Z",
       "traffic": {
         "score": 0,
-        "label": "Свободно",
+        "label": "Нет данных",
         "delayMin": 0
       },
       "fuels": [
@@ -793,7 +793,7 @@
       "updatedAt": "2026-06-30T09:00:00.000Z",
       "traffic": {
         "score": 0,
-        "label": "Свободно",
+        "label": "Нет данных",
         "delayMin": 0
       },
       "fuels": [
@@ -837,7 +837,7 @@
       "updatedAt": "2026-06-30T09:00:00.000Z",
       "traffic": {
         "score": 0,
-        "label": "Свободно",
+        "label": "Нет данных",
         "delayMin": 0
       },
       "fuels": [
@@ -881,7 +881,7 @@
       "updatedAt": "2026-06-30T09:00:00.000Z",
       "traffic": {
         "score": 0,
-        "label": "Свободно",
+        "label": "Нет данных",
         "delayMin": 0
       },
       "fuels": [
@@ -925,7 +925,7 @@
       "updatedAt": "2026-06-30T09:00:00.000Z",
       "traffic": {
         "score": 0,
-        "label": "Свободно",
+        "label": "Нет данных",
         "delayMin": 0
       },
       "fuels": [
@@ -964,7 +964,7 @@
       "updatedAt": "2026-06-30T09:00:00.000Z",
       "traffic": {
         "score": 0,
-        "label": "Свободно",
+        "label": "Нет данных",
         "delayMin": 0
       },
       "fuels": [
@@ -1003,7 +1003,7 @@
       "updatedAt": "2026-06-30T09:00:00.000Z",
       "traffic": {
         "score": 0,
-        "label": "Свободно",
+        "label": "Нет данных",
         "delayMin": 0
       },
       "fuels": [
@@ -1051,7 +1051,7 @@
       "updatedAt": "2026-06-30T09:00:00.000Z",
       "traffic": {
         "score": 0,
-        "label": "Свободно",
+        "label": "Нет данных",
         "delayMin": 0
       },
       "fuels": [
@@ -1090,7 +1090,7 @@
       "updatedAt": "2026-06-30T09:00:00.000Z",
       "traffic": {
         "score": 0,
-        "label": "Свободно",
+        "label": "Нет данных",
         "delayMin": 0
       },
       "fuels": [

@@ -148,7 +148,8 @@ def upsert_station(conn, station, created_at=None):
 
 def upsert_state(conn, station_id, payload):
     current = conn.execute("SELECT * FROM station_state WHERE station_id = ?", (station_id,)).fetchone()
-    traffic = payload.get("traffic") if isinstance(payload.get("traffic"), dict) else {}
+    has_traffic = isinstance(payload.get("traffic"), dict)
+    traffic = payload.get("traffic") if has_traffic else {}
     status = payload.get("status", current["status"] if current else "unknown")
     if status not in ("open", "closed", "unknown"):
         status = "unknown"
@@ -167,6 +168,8 @@ def upsert_state(conn, station_id, payload):
     label = clean_text(traffic.get("label"))
     if not label and current:
         label = current["traffic_label"]
+    if not label and not has_traffic:
+        label = "Нет данных"
     if not label:
         label = traffic_label(score)
     open_until = clean_text(payload.get("openUntil"))
