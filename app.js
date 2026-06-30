@@ -322,7 +322,7 @@ function renderStationCard(station) {
       </span>
       <span class="fuel-row">${station.fuels.map(renderFuel).join("")}</span>
       <span class="schedule-row">${renderSchedule(station.openUntil)}</span>
-      ${renderSignals(station.signals)}
+      ${renderSignals(station.signals, 3)}
       <span class="station-foot">
         ${renderTraffic(station.traffic)}
         <span>${escapeHtml(formatDateTime(station.updatedAt))}</span>
@@ -387,8 +387,8 @@ function renderSchedule(schedule) {
   `;
 }
 
-function renderSignals(signals = []) {
-  const freshSignals = signals.filter(isSignalFresh).slice(0, 3);
+function renderSignals(signals = [], limit = 3) {
+  const freshSignals = signals.filter(isSignalFresh).slice(0, limit);
   if (!freshSignals.length) return "";
   return `<span class="signal-row">${freshSignals.map(renderSignalPill).join("")}</span>`;
 }
@@ -570,7 +570,7 @@ function renderDetail() {
     <div class="service-row">
       ${renderTraffic(station.traffic)}
       ${renderSchedule(station.openUntil)}
-      ${renderSignals(station.signals)}
+      ${renderSignals(station.signals, 8)}
       ${station.services.map((service) => `<span class="fuel-price">${escapeHtml(service)}</span>`).join("")}
     </div>
   `;
