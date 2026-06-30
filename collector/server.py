@@ -164,7 +164,11 @@ def upsert_state(conn, station_id, payload):
 
     updated_at = clean_text(payload.get("updatedAt")) or utc_now()
     source = clean_text(payload.get("source")) or "manual"
-    label = clean_text(traffic.get("label")) or traffic_label(score)
+    label = clean_text(traffic.get("label"))
+    if not label and current:
+        label = current["traffic_label"]
+    if not label:
+        label = traffic_label(score)
     open_until = clean_text(payload.get("openUntil"))
     if not open_until and current:
         open_until = current["open_until"]
@@ -309,7 +313,10 @@ def save_report(payload, remote_addr):
 
     with connect() as conn:
         exists = conn.execute("SELECT 1 FROM stations WHERE id = ?", (station_id,)).fetchone()
-        if not exists:
+        if station:
+            station["id"] = station_id
+            upsert_station(conn, station, now)
+        elif not exists:
             station_payload = station or payload
             station_payload["id"] = station_id
             upsert_station(conn, station_payload, now)

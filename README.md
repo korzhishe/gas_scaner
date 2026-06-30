@@ -8,6 +8,7 @@
 - `data/stations.json` - текущие данные, которые читает сайт.
 - `collector/server.py` - собственный источник данных на SQLite.
 - `collect.html` - форма оператора для обновления статуса, цен, наличия и пробок.
+- `scripts/import-benzup.mjs` - импорт АЗС и цен из Benzup API в collector.
 - `scripts/update-stations.mjs` - обновление `data/stations.json` из внешнего JSON API.
 - `.github/workflows/pages.yml` - деплой на GitHub Pages.
 - `.github/workflows/update-data.yml` - плановое обновление данных каждые 30 минут.
@@ -77,6 +78,43 @@ COLLECTOR_TOKEN=change-me python3 collector/server.py
 ```
 
 Форма оператора доступна в `collect.html`. На сервере с текущей конфигурацией это `http://89.167.119.100:8080/collect.html`.
+
+## Импорт из Benzup
+
+Benzup Retail API использует `https://api.omt-consult.ru` и bearer-токен. Импорт по умолчанию читает `GET /v2/stations`, фильтрует Краснодар по координатам или адресу и отправляет найденные АЗС в collector.
+
+Добавьте токен в локальный `.collector.env`:
+
+```bash
+BENZUP_TOKEN=your-benzup-token
+COLLECTOR_URL=http://127.0.0.1:8090
+```
+
+Проверка без записи:
+
+```bash
+scripts/start-benzup-sync.sh --dry-run --save-raw /tmp/benzup-stations.json
+```
+
+Импорт в collector:
+
+```bash
+scripts/start-benzup-sync.sh
+```
+
+Переменные настройки:
+
+- `BENZUP_BASE_URL` - по умолчанию `https://api.omt-consult.ru`.
+- `BENZUP_ENDPOINT` - по умолчанию `/v2/stations`.
+- `BENZUP_PRODUCTS_ENDPOINT` - по умолчанию `/v2/products`.
+- `BENZUP_CITY` - по умолчанию `Краснодар`.
+- `BENZUP_BOUNDS` - границы фильтра `minLat,minLng,maxLat,maxLng`, по умолчанию `44.92,38.78,45.18,39.18`.
+
+Cron для обновления каждые 30 минут:
+
+```cron
+*/30 * * * * cd /home/deploy/projects/gas_scaner && scripts/start-benzup-sync.sh >> /tmp/gas_scaner_benzup.log 2>&1
+```
 
 ## Подключение live-данных
 
