@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Сбор данных АЗС</title>
+    <link rel="stylesheet" href="styles.css" />
+    <style>
+      body {
+        min-height: 100vh;
+      }
+
+      .collector-shell {
+        display: grid;
+        grid-template-columns: minmax(320px, 440px) minmax(0, 1fr);
+        min-height: 100vh;
+      }
+
+      .collector-panel {
+        display: grid;
+        align-content: start;
+        gap: 16px;
+        padding: 22px;
+        background: var(--panel);
+        border-right: 1px solid var(--line);
+      }
+
+      .collector-main {
+        display: grid;
+        align-content: start;
+        gap: 14px;
+        padding: 22px;
+      }
+
+      .form-grid {
+        display: grid;
+        gap: 12px;
+      }
+
+      .field {
+        display: grid;
+        gap: 6px;
+        color: var(--muted);
+        font-size: 0.82rem;
+        font-weight: 800;
+      }
+
+      .field input,
+      .field select {
+        height: 42px;
+        padding: 0 11px;
+        color: var(--ink);
+        background: #f9fbf9;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+      }
+
+      .field input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+      }
+
+      .fuel-editor {
+        display: grid;
+        grid-template-columns: minmax(70px, 0.75fr) minmax(90px, 1fr) minmax(80px, 0.7fr);
+        gap: 8px;
+        align-items: end;
+        padding: 10px;
+        background: #f6f8f6;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+      }
+
+      .fuel-name {
+        padding-bottom: 10px;
+        font-weight: 900;
+      }
+
+      .submit-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .primary-button,
+      .secondary-button {
+        min-height: 42px;
+        padding: 0 14px;
+        border-radius: 8px;
+        font-weight: 850;
+      }
+
+      .primary-button {
+        color: #fff;
+        background: var(--green);
+        border: 1px solid var(--green);
+      }
+
+      .secondary-button {
+        color: var(--ink);
+        background: #f6f8f6;
+        border: 1px solid var(--line);
+      }
+
+      .collector-status {
+        min-height: 44px;
+        padding: 12px;
+        background: #f6f8f6;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        color: var(--muted);
+      }
+
+      .collector-status.is-ok {
+        color: var(--green);
+        background: var(--green-soft);
+      }
+
+      .collector-status.is-error {
+        color: var(--red);
+        background: var(--red-soft);
+      }
+
+      @media (max-width: 860px) {
+        .collector-shell {
+          grid-template-columns: 1fr;
+        }
+
+        .collector-panel {
+          border-right: 0;
+          border-bottom: 1px solid var(--line);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="collector-shell">
+      <aside class="collector-panel">
+        <header>
+          <p class="eyebrow">Источник данных</p>
+          <h1>Сбор АЗС</h1>
+        </header>
+
+        <div class="form-grid">
+          <label class="field">
+            API
+            <input id="apiUrl" type="url" autocomplete="url" />
+          </label>
+          <label class="field">
+            Токен
+            <input id="token" type="password" autocomplete="current-password" />
+          </label>
+          <div class="submit-row">
+            <button class="secondary-button" id="loadButton" type="button">Обновить список</button>
+            <a class="secondary-button" href="./" style="display: inline-flex; align-items: center; text-decoration: none">Карта</a>
+          </div>
+        </div>
+
+        <div class="collector-status" id="statusBox">Готово</div>
+      </aside>
+
+      <main class="collector-main">
+        <form class="form-grid" id="reportForm">
+          <label class="field">
+            АЗС
+            <select id="stationSelect" required></select>
+          </label>
+
+          <div class="select-row">
+            <label class="field">
+              Статус
+              <select id="statusSelect">
+                <option value="open">Открыта</option>
+                <option value="closed">Закрыта</option>
+                <option value="unknown">Нет данных</option>
+              </select>
+            </label>
+            <label class="field">
+              График
+              <input id="openUntil" type="text" placeholder="24/7" />
+            </label>
+          </div>
+
+          <div class="select-row">
+            <label class="field">
+              Пробки
+              <input id="trafficScore" type="number" min="0" max="10" step="1" />
+            </label>
+            <label class="field">
+              Задержка, мин
+              <input id="trafficDelay" type="number" min="0" step="1" />
+            </label>
+          </div>
+
+          <section class="form-grid" id="fuelEditors" aria-label="Топливо"></section>
+
+          <div class="submit-row">
+            <button class="primary-button" type="submit">Сохранить отчет</button>
+            <button class="secondary-button" id="resetButton" type="button">Сбросить</button>
+          </div>
+        </form>
+      </main>
+    </div>
+
+    <script>
+      const FUEL_TYPES = ["АИ-92", "АИ-95", "АИ-98", "ДТ", "Газ"];
+      const knownCollectorUrl = "http://89.167.119.100:8090";
+      const state = {
+        stations: [],
+      };
+
+      const els = {
+        apiUrl: document.querySelector("#apiUrl"),
+        token: document.querySelector("#token"),
+        loadButton: document.querySelector("#loadButton"),
+        reportForm: document.querySelector("#reportForm"),
+        stationSelect: document.querySelector("#stationSelect"),
+        statusSelect: document.querySelector("#statusSelect"),
+        openUntil: document.querySelector("#openUntil"),
+        trafficScore: document.querySelector("#trafficScore"),
+        trafficDelay: document.querySelector("#trafficDelay"),
+        fuelEditors: document.querySelector("#fuelEditors"),
+        resetButton: document.querySelector("#resetButton"),
+        statusBox: document.querySelector("#statusBox"),
+      };
+
+      init();
+
+      function init() {
+        els.apiUrl.value = localStorage.getItem("collectorApiUrl") || defaultApiUrl();
+        els.token.value = localStorage.getItem("collectorToken") || "";
+        els.loadButton.addEventListener("click", loadStations);
+        els.stationSelect.addEventListener("change", fillFromSelectedStation);
+        els.resetButton.addEventListener("click", fillFromSelectedStation);
+        els.reportForm.addEventListener("submit", submitReport);
+        renderFuelEditors();
+        loadStations();
+      }
+
+      function defaultApiUrl() {
+        if (location.hostname === "localhost" || location.hostname === "127.0.0.1") {
+          return "http://localhost:8090";
+        }
+
+        if (location.hostname === "89.167.119.100") {
+          return `${location.protocol}//${location.hostname}:8090`;
+        }
+
+        return knownCollectorUrl;
+      }
+
+      async function loadStations() {
+        rememberSettings();
+        setStatus("Загружаю список", "");
+
+        try {
+          const response = await fetch(`${apiBase()}/api/stations`, { cache: "no-store" });
+          if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+          const payload = await response.json();
+          state.stations = payload.stations || [];
+          renderStationOptions();
+          fillFromSelectedStation();
+          setStatus(`Загружено: ${state.stations.length} АЗС`, "ok");
+        } catch (error) {
+          setStatus(`Ошибка загрузки: ${error.message}`, "error");
+        }
+      }
+
+      function renderStationOptions() {
+        els.stationSelect.innerHTML = state.stations
+          .map((station) => `<option value="${escapeHtml(station.id)}">${escapeHtml(station.name)} · ${escapeHtml(station.address)}</option>`)
+          .join("");
+      }
+
+      function renderFuelEditors() {
+        els.fuelEditors.innerHTML = FUEL_TYPES.map(
+          (type) => `
+            <div class="fuel-editor" data-fuel="${escapeHtml(type)}">
+              <div class="fuel-name">${escapeHtml(type)}</div>
+              <label class="field">
+                Цена
+                <input class="fuel-price-input" type="number" min="0" step="0.01" inputmode="decimal" />
+              </label>
+              <label class="field">
+                Есть
+                <input class="fuel-available-input" type="checkbox" />
+              </label>
+            </div>
+          `,
+        ).join("");
+      }
+
+      function fillFromSelectedStation() {
+        const station = selectedStation();
+        if (!station) return;
+
+        els.statusSelect.value = station.status || "unknown";
+        els.openUntil.value = station.openUntil || "";
+        els.trafficScore.value = station.traffic?.score ?? 0;
+        els.trafficDelay.value = station.traffic?.delayMin ?? 0;
+
+        document.querySelectorAll(".fuel-editor").forEach((editor) => {
+          const fuel = station.fuels?.find((item) => item.type === editor.dataset.fuel);
+          editor.querySelector(".fuel-price-input").value = fuel?.price ?? "";
+          editor.querySelector(".fuel-available-input").checked = Boolean(fuel?.available);
+        });
+      }
+
+      async function submitReport(event) {
+        event.preventDefault();
+        rememberSettings();
+
+        const station = selectedStation();
+        if (!station) return;
+
+        const payload = {
+          stationId: station.id,
+          status: els.statusSelect.value,
+          openUntil: els.openUntil.value.trim(),
+          source: "operator-form",
+          traffic: {
+            score: Number(els.trafficScore.value || 0),
+            label: trafficLabel(Number(els.trafficScore.value || 0)),
+            delayMin: Number(els.trafficDelay.value || 0),
+          },
+          fuels: [...document.querySelectorAll(".fuel-editor")].map((editor) => ({
+            type: editor.dataset.fuel,
+            price: numberOrNull(editor.querySelector(".fuel-price-input").value),
+            available: editor.querySelector(".fuel-available-input").checked,
+          })),
+        };
+
+        try {
+          setStatus("Сохраняю отчет", "");
+          const headers = { "Content-Type": "application/json" };
+          if (els.token.value.trim()) {
+            headers.Authorization = `Bearer ${els.token.value.trim()}`;
+          }
+
+          const response = await fetch(`${apiBase()}/api/reports`, {
+            method: "POST",
+            headers,
+            body: JSON.stringify(payload),
+          });
+          const result = await response.json();
+          if (!response.ok) throw new Error(result.error || `${response.status} ${response.statusText}`);
+
+          setStatus(`Сохранено: ${result.updatedAt}`, "ok");
+          await loadStations();
+        } catch (error) {
+          setStatus(`Ошибка сохранения: ${error.message}`, "error");
+        }
+      }
+
+      function selectedStation() {
+        return state.stations.find((station) => station.id === els.stationSelect.value);
+      }
+
+      function rememberSettings() {
+        localStorage.setItem("collectorApiUrl", els.apiUrl.value.trim());
+        localStorage.setItem("collectorToken", els.token.value.trim());
+      }
+
+      function apiBase() {
+        return els.apiUrl.value.trim().replace(/\/$/, "");
+      }
+
+      function setStatus(message, type) {
+        els.statusBox.textContent = message;
+        els.statusBox.classList.toggle("is-ok", type === "ok");
+        els.statusBox.classList.toggle("is-error", type === "error");
+      }
+
+      function trafficLabel(score) {
+        if (score <= 2) return "Свободно";
+        if (score <= 5) return "Умеренно";
+        if (score <= 7) return "Плотно";
+        return "Стоит";
+      }
+
+      function numberOrNull(value) {
+        if (value === "") return null;
+        const number = Number(value);
+        return Number.isFinite(number) ? number : null;
+      }
+
+      function escapeHtml(value) {
+        return String(value ?? "")
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#039;");
+      }
+    </script>
+  </body>
+</html>

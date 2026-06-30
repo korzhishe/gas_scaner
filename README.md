@@ -6,6 +6,8 @@
 
 - `index.html`, `styles.css`, `app.js` - интерфейс без сборщика.
 - `data/stations.json` - текущие данные, которые читает сайт.
+- `collector/server.py` - собственный источник данных на SQLite.
+- `collect.html` - форма оператора для обновления статуса, цен, наличия и пробок.
 - `scripts/update-stations.mjs` - обновление `data/stations.json` из внешнего JSON API.
 - `.github/workflows/pages.yml` - деплой на GitHub Pages.
 - `.github/workflows/update-data.yml` - плановое обновление данных каждые 30 минут.
@@ -40,11 +42,45 @@
 }
 ```
 
-`data/stations.json` сейчас содержит демонстрационные записи. Для реального мониторинга нужен источник, который регулярно отдает цены, наличие топлива и оценку пробок в этом формате.
+`data/stations.json` содержит стартовые записи. Для реального мониторинга можно использовать собственный collector API или внешний провайдер, который отдает JSON в этом формате.
+
+## Собственный collector API
+
+Collector хранит данные в SQLite и отдает JSON, совместимый с сайтом:
+
+```bash
+COLLECTOR_TOKEN=change-me python3 collector/server.py
+```
+
+По умолчанию API слушает `http://0.0.0.0:8090`.
+
+Основные endpoint:
+
+- `GET /api/stations` - актуальный JSON для сайта и GitHub Actions.
+- `POST /api/reports` - обновление одной АЗС. Если задан `COLLECTOR_TOKEN`, передайте `Authorization: Bearer <token>`.
+- `GET /api/reports?stationId=krd-001` - последние отчеты.
+
+Пример отчета:
+
+```json
+{
+  "stationId": "krd-001",
+  "status": "open",
+  "openUntil": "24/7",
+  "source": "operator-form",
+  "traffic": { "score": 4, "label": "Умеренно", "delayMin": 6 },
+  "fuels": [
+    { "type": "АИ-92", "price": 57.9, "available": true },
+    { "type": "АИ-95", "price": 62.4, "available": true }
+  ]
+}
+```
+
+Форма оператора доступна в `collect.html`. На сервере с текущей конфигурацией это `http://89.167.119.100:8080/collect.html`.
 
 ## Подключение live-данных
 
-1. Создайте публичный или закрытый endpoint, который возвращает JSON в формате выше.
+1. Создайте публичный или закрытый endpoint, который возвращает JSON в формате выше. Собственный collector уже подходит: `/api/stations`.
 2. В репозитории GitHub задайте `DATA_SOURCE_URL` в `Settings -> Secrets and variables -> Actions`.
 3. Если endpoint требует авторизацию, добавьте `DATA_SOURCE_TOKEN`.
 4. Запустите workflow `Update station data` вручную или дождитесь расписания.

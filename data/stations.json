@@ -1,101 +1,52 @@
 {
-  "generatedAt": "2026-06-30T07:00:00Z",
-  "sourceLabel": "Демонстрационные данные. Подключите DATA_SOURCE_URL для live-обновлений.",
+  "generatedAt": "2026-06-30T08:35:39Z",
+  "sourceLabel": "Собственный collector API: ручные отчеты и импорт",
   "stations": [
-    {
-      "id": "krd-001",
-      "name": "АЗС Центр",
-      "brand": "Лукойл",
-      "district": "Центральный",
-      "address": "ул. Красная, 176, Краснодар",
-      "coords": { "lat": 45.0428, "lng": 38.9754 },
-      "status": "open",
-      "openUntil": "24/7",
-      "updatedAt": "2026-06-30T06:55:00Z",
-      "traffic": { "score": 7, "label": "Плотно", "delayMin": 14 },
-      "fuels": [
-        { "type": "АИ-92", "price": 57.9, "available": true },
-        { "type": "АИ-95", "price": 62.4, "available": true },
-        { "type": "АИ-98", "price": 79.2, "available": false },
-        { "type": "ДТ", "price": 68.1, "available": true }
-      ],
-      "services": ["магазин", "кофе", "туалет"]
-    },
-    {
-      "id": "krd-002",
-      "name": "АЗС Северная",
-      "brand": "Роснефть",
-      "district": "Фестивальный",
-      "address": "ул. Тургенева, 138, Краснодар",
-      "coords": { "lat": 45.0619, "lng": 38.9571 },
-      "status": "open",
-      "openUntil": "24/7",
-      "updatedAt": "2026-06-30T06:48:00Z",
-      "traffic": { "score": 4, "label": "Умеренно", "delayMin": 8 },
-      "fuels": [
-        { "type": "АИ-92", "price": 57.5, "available": true },
-        { "type": "АИ-95", "price": 62.1, "available": true },
-        { "type": "ДТ", "price": 67.8, "available": true },
-        { "type": "Газ", "price": 31.2, "available": false }
-      ],
-      "services": ["магазин", "шиномонтаж"]
-    },
     {
       "id": "krd-003",
       "name": "АЗС Восточный обход",
       "brand": "Газпромнефть",
       "district": "Пашковский",
       "address": "ул. Фадеева, 401, Краснодар",
-      "coords": { "lat": 45.0158, "lng": 39.1008 },
+      "coords": {
+        "lat": 45.0158,
+        "lng": 39.1008
+      },
       "status": "open",
       "openUntil": "24/7",
       "updatedAt": "2026-06-30T06:52:00Z",
-      "traffic": { "score": 2, "label": "Свободно", "delayMin": 3 },
+      "traffic": {
+        "score": 2,
+        "label": "Свободно",
+        "delayMin": 3
+      },
       "fuels": [
-        { "type": "АИ-92", "price": 57.2, "available": true },
-        { "type": "АИ-95", "price": 61.95, "available": true },
-        { "type": "АИ-98", "price": 78.7, "available": true },
-        { "type": "ДТ", "price": 67.9, "available": true }
+        {
+          "type": "АИ-92",
+          "price": 57.2,
+          "available": true
+        },
+        {
+          "type": "АИ-95",
+          "price": 61.95,
+          "available": true
+        },
+        {
+          "type": "АИ-98",
+          "price": 78.7,
+          "available": true
+        },
+        {
+          "type": "ДТ",
+          "price": 67.9,
+          "available": true
+        }
       ],
-      "services": ["кафе", "мойка", "туалет"]
-    },
-    {
-      "id": "krd-004",
-      "name": "АЗС Юбилейная",
-      "brand": "Татнефть",
-      "district": "Юбилейный",
-      "address": "пр-т Чекистов, 36, Краснодар",
-      "coords": { "lat": 45.0185, "lng": 38.927 },
-      "status": "open",
-      "openUntil": "24/7",
-      "updatedAt": "2026-06-30T06:42:00Z",
-      "traffic": { "score": 5, "label": "Умеренно", "delayMin": 9 },
-      "fuels": [
-        { "type": "АИ-92", "price": 57.7, "available": true },
-        { "type": "АИ-95", "price": 62.35, "available": true },
-        { "type": "ДТ", "price": 68.3, "available": true },
-        { "type": "Газ", "price": 30.9, "available": true }
-      ],
-      "services": ["магазин", "кофе"]
-    },
-    {
-      "id": "krd-005",
-      "name": "АЗС Энка",
-      "brand": "Shell",
-      "district": "Энка",
-      "address": "ул. Дзержинского, 255, Краснодар",
-      "coords": { "lat": 45.1003, "lng": 38.984 },
-      "status": "open",
-      "openUntil": "24/7",
-      "updatedAt": "2026-06-30T06:30:00Z",
-      "traffic": { "score": 3, "label": "Едет", "delayMin": 5 },
-      "fuels": [
-        { "type": "АИ-92", "price": 58.1, "available": true },
-        { "type": "АИ-95", "price": 62.8, "available": true },
-        { "type": "АИ-98", "price": 80.1, "available": true },
-        { "type": "ДТ", "price": 68.6, "available": true }
-      ],
-      "services": ["магазин", "кофе", "туалет"]
+      "services": [
+        "кафе",
+        "мойка",
+        "туалет"
+      ]
     },
     {
       "id": "krd-006",
@@ -103,36 +54,38 @@
       "brand": "Башнефть",
       "district": "Гидростроителей",
       "address": "ул. Автолюбителей, 2, Краснодар",
-      "coords": { "lat": 45.0005, "lng": 39.0765 },
+      "coords": {
+        "lat": 45.0005,
+        "lng": 39.0765
+      },
       "status": "closed",
       "openUntil": "техработы",
       "updatedAt": "2026-06-30T06:20:00Z",
-      "traffic": { "score": 6, "label": "Плотно", "delayMin": 12 },
+      "traffic": {
+        "score": 6,
+        "label": "Плотно",
+        "delayMin": 12
+      },
       "fuels": [
-        { "type": "АИ-92", "price": 57.6, "available": false },
-        { "type": "АИ-95", "price": 62.2, "available": false },
-        { "type": "ДТ", "price": 68.4, "available": false }
+        {
+          "type": "АИ-92",
+          "price": 57.6,
+          "available": false
+        },
+        {
+          "type": "АИ-95",
+          "price": 62.2,
+          "available": false
+        },
+        {
+          "type": "ДТ",
+          "price": 68.4,
+          "available": false
+        }
       ],
-      "services": ["магазин"]
-    },
-    {
-      "id": "krd-007",
-      "name": "АЗС Немецкая деревня",
-      "brand": "Лукойл",
-      "district": "Немецкая деревня",
-      "address": "ул. Западный Обход, 45, Краснодар",
-      "coords": { "lat": 45.0824, "lng": 38.8892 },
-      "status": "open",
-      "openUntil": "24/7",
-      "updatedAt": "2026-06-30T06:50:00Z",
-      "traffic": { "score": 1, "label": "Свободно", "delayMin": 1 },
-      "fuels": [
-        { "type": "АИ-92", "price": 57.35, "available": true },
-        { "type": "АИ-95", "price": 61.85, "available": true },
-        { "type": "ДТ", "price": 67.7, "available": true },
-        { "type": "Газ", "price": 30.7, "available": true }
-      ],
-      "services": ["кафе", "туалет"]
+      "services": [
+        "магазин"
+      ]
     },
     {
       "id": "krd-008",
@@ -140,18 +93,134 @@
       "brand": "Роснефть",
       "district": "Комсомольский",
       "address": "ул. Уральская, 210, Краснодар",
-      "coords": { "lat": 45.031, "lng": 39.066 },
+      "coords": {
+        "lat": 45.031,
+        "lng": 39.066
+      },
       "status": "open",
       "openUntil": "24/7",
       "updatedAt": "2026-06-30T06:44:00Z",
-      "traffic": { "score": 8, "label": "Стоит", "delayMin": 18 },
+      "traffic": {
+        "score": 8,
+        "label": "Стоит",
+        "delayMin": 18
+      },
       "fuels": [
-        { "type": "АИ-92", "price": 57.65, "available": true },
-        { "type": "АИ-95", "price": 62.25, "available": true },
-        { "type": "АИ-98", "price": 79.6, "available": false },
-        { "type": "ДТ", "price": 68.15, "available": true }
+        {
+          "type": "АИ-92",
+          "price": 57.65,
+          "available": true
+        },
+        {
+          "type": "АИ-95",
+          "price": 62.25,
+          "available": true
+        },
+        {
+          "type": "АИ-98",
+          "price": 79.6,
+          "available": false
+        },
+        {
+          "type": "ДТ",
+          "price": 68.15,
+          "available": true
+        }
       ],
-      "services": ["магазин", "кофе"]
+      "services": [
+        "магазин",
+        "кофе"
+      ]
+    },
+    {
+      "id": "krd-007",
+      "name": "АЗС Немецкая деревня",
+      "brand": "Лукойл",
+      "district": "Немецкая деревня",
+      "address": "ул. Западный Обход, 45, Краснодар",
+      "coords": {
+        "lat": 45.0824,
+        "lng": 38.8892
+      },
+      "status": "open",
+      "openUntil": "24/7",
+      "updatedAt": "2026-06-30T06:50:00Z",
+      "traffic": {
+        "score": 1,
+        "label": "Свободно",
+        "delayMin": 1
+      },
+      "fuels": [
+        {
+          "type": "АИ-92",
+          "price": 57.35,
+          "available": true
+        },
+        {
+          "type": "АИ-95",
+          "price": 61.85,
+          "available": true
+        },
+        {
+          "type": "ДТ",
+          "price": 67.7,
+          "available": true
+        },
+        {
+          "type": "Газ",
+          "price": 30.7,
+          "available": true
+        }
+      ],
+      "services": [
+        "кафе",
+        "туалет"
+      ]
+    },
+    {
+      "id": "krd-002",
+      "name": "АЗС Северная",
+      "brand": "Роснефть",
+      "district": "Фестивальный",
+      "address": "ул. Тургенева, 138, Краснодар",
+      "coords": {
+        "lat": 45.0619,
+        "lng": 38.9571
+      },
+      "status": "open",
+      "openUntil": "24/7",
+      "updatedAt": "2026-06-30T06:48:00Z",
+      "traffic": {
+        "score": 4,
+        "label": "Умеренно",
+        "delayMin": 8
+      },
+      "fuels": [
+        {
+          "type": "АИ-92",
+          "price": 57.5,
+          "available": true
+        },
+        {
+          "type": "АИ-95",
+          "price": 62.1,
+          "available": true
+        },
+        {
+          "type": "ДТ",
+          "price": 67.8,
+          "available": true
+        },
+        {
+          "type": "Газ",
+          "price": 31.2,
+          "available": false
+        }
+      ],
+      "services": [
+        "магазин",
+        "шиномонтаж"
+      ]
     },
     {
       "id": "krd-009",
@@ -159,17 +228,175 @@
       "brand": "Газпромнефть",
       "district": "Центральный",
       "address": "ул. Московская, 40, Краснодар",
-      "coords": { "lat": 45.0526, "lng": 38.9887 },
+      "coords": {
+        "lat": 45.0526,
+        "lng": 38.9887
+      },
       "status": "unknown",
       "openUntil": "уточняется",
       "updatedAt": "2026-06-30T05:58:00Z",
-      "traffic": { "score": 6, "label": "Плотно", "delayMin": 11 },
+      "traffic": {
+        "score": 6,
+        "label": "Плотно",
+        "delayMin": 11
+      },
       "fuels": [
-        { "type": "АИ-92", "price": 57.8, "available": true },
-        { "type": "АИ-95", "price": 62.45, "available": true },
-        { "type": "ДТ", "price": 68.25, "available": false }
+        {
+          "type": "АИ-92",
+          "price": 57.8,
+          "available": true
+        },
+        {
+          "type": "АИ-95",
+          "price": 62.45,
+          "available": true
+        },
+        {
+          "type": "ДТ",
+          "price": 68.25,
+          "available": false
+        }
       ],
-      "services": ["магазин"]
+      "services": [
+        "магазин"
+      ]
+    },
+    {
+      "id": "krd-001",
+      "name": "АЗС Центр",
+      "brand": "Лукойл",
+      "district": "Центральный",
+      "address": "ул. Красная, 176, Краснодар",
+      "coords": {
+        "lat": 45.0428,
+        "lng": 38.9754
+      },
+      "status": "open",
+      "openUntil": "24/7",
+      "updatedAt": "2026-06-30T08:35:08Z",
+      "traffic": {
+        "score": 4,
+        "label": "Умеренно",
+        "delayMin": 6
+      },
+      "fuels": [
+        {
+          "type": "АИ-92",
+          "price": 57.9,
+          "available": true
+        },
+        {
+          "type": "АИ-95",
+          "price": 62.4,
+          "available": true
+        },
+        {
+          "type": "АИ-98",
+          "price": 79.2,
+          "available": false
+        },
+        {
+          "type": "ДТ",
+          "price": 68.1,
+          "available": true
+        }
+      ],
+      "services": [
+        "магазин",
+        "кофе",
+        "туалет"
+      ]
+    },
+    {
+      "id": "krd-005",
+      "name": "АЗС Энка",
+      "brand": "Shell",
+      "district": "Энка",
+      "address": "ул. Дзержинского, 255, Краснодар",
+      "coords": {
+        "lat": 45.1003,
+        "lng": 38.984
+      },
+      "status": "open",
+      "openUntil": "24/7",
+      "updatedAt": "2026-06-30T06:30:00Z",
+      "traffic": {
+        "score": 3,
+        "label": "Едет",
+        "delayMin": 5
+      },
+      "fuels": [
+        {
+          "type": "АИ-92",
+          "price": 58.1,
+          "available": true
+        },
+        {
+          "type": "АИ-95",
+          "price": 62.8,
+          "available": true
+        },
+        {
+          "type": "АИ-98",
+          "price": 80.1,
+          "available": true
+        },
+        {
+          "type": "ДТ",
+          "price": 68.6,
+          "available": true
+        }
+      ],
+      "services": [
+        "магазин",
+        "кофе",
+        "туалет"
+      ]
+    },
+    {
+      "id": "krd-004",
+      "name": "АЗС Юбилейная",
+      "brand": "Татнефть",
+      "district": "Юбилейный",
+      "address": "пр-т Чекистов, 36, Краснодар",
+      "coords": {
+        "lat": 45.0185,
+        "lng": 38.927
+      },
+      "status": "open",
+      "openUntil": "24/7",
+      "updatedAt": "2026-06-30T06:42:00Z",
+      "traffic": {
+        "score": 5,
+        "label": "Умеренно",
+        "delayMin": 9
+      },
+      "fuels": [
+        {
+          "type": "АИ-92",
+          "price": 57.7,
+          "available": true
+        },
+        {
+          "type": "АИ-95",
+          "price": 62.35,
+          "available": true
+        },
+        {
+          "type": "ДТ",
+          "price": 68.3,
+          "available": true
+        },
+        {
+          "type": "Газ",
+          "price": 30.9,
+          "available": true
+        }
+      ],
+      "services": [
+        "магазин",
+        "кофе"
+      ]
     },
     {
       "id": "krd-010",
@@ -177,18 +404,44 @@
       "brand": "Татнефть",
       "district": "Яблоновский мост",
       "address": "ул. Захарова, 1, Краснодар",
-      "coords": { "lat": 45.0128, "lng": 38.9548 },
+      "coords": {
+        "lat": 45.0128,
+        "lng": 38.9548
+      },
       "status": "open",
       "openUntil": "24/7",
       "updatedAt": "2026-06-30T06:37:00Z",
-      "traffic": { "score": 5, "label": "Умеренно", "delayMin": 9 },
+      "traffic": {
+        "score": 5,
+        "label": "Умеренно",
+        "delayMin": 9
+      },
       "fuels": [
-        { "type": "АИ-92", "price": 57.45, "available": true },
-        { "type": "АИ-95", "price": 62.05, "available": true },
-        { "type": "ДТ", "price": 67.95, "available": true },
-        { "type": "Газ", "price": 31.0, "available": true }
+        {
+          "type": "АИ-92",
+          "price": 57.45,
+          "available": true
+        },
+        {
+          "type": "АИ-95",
+          "price": 62.05,
+          "available": true
+        },
+        {
+          "type": "ДТ",
+          "price": 67.95,
+          "available": true
+        },
+        {
+          "type": "Газ",
+          "price": 31,
+          "available": true
+        }
       ],
-      "services": ["магазин", "мойка"]
+      "services": [
+        "магазин",
+        "мойка"
+      ]
     }
   ]
 }
