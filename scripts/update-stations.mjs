@@ -36,6 +36,7 @@ function normalizePayload(input) {
     generatedAt: input.generatedAt || new Date().toISOString(),
     sourceLabel: input.sourceLabel || "Live data source",
     stations: stations.map(normalizeStation),
+    signals: Array.isArray(input.signals) ? input.signals.map(normalizeSignal) : [],
   };
 }
 
@@ -71,6 +72,7 @@ function normalizeStation(station) {
     },
     fuels: Array.isArray(station.fuels) ? station.fuels.map(normalizeFuel) : [],
     services: Array.isArray(station.services) ? station.services.map(String) : [],
+    signals: Array.isArray(station.signals) ? station.signals.map(normalizeSignal) : [],
   };
 }
 
@@ -79,6 +81,22 @@ function normalizeFuel(fuel) {
     type: String(fuel.type),
     price: fuel.price === null || fuel.price === undefined || fuel.price === "" ? null : Number(fuel.price),
     available: Boolean(fuel.available),
+  };
+}
+
+function normalizeSignal(signal) {
+  return {
+    id: signal.id || "",
+    stationId: signal.stationId ? String(signal.stationId) : "",
+    category: signal.category ? String(signal.category) : "unknown",
+    confidence: clamp(Number(signal.confidence ?? 0), 0, 1),
+    queueLevel: signal.queueLevel ? String(signal.queueLevel) : "",
+    fuelTypes: Array.isArray(signal.fuelTypes) ? signal.fuelTypes.map(String) : [],
+    note: signal.note ? String(signal.note) : "",
+    source: signal.source ? String(signal.source) : "",
+    sourceUrl: signal.sourceUrl ? String(signal.sourceUrl) : "",
+    observedAt: signal.observedAt || "",
+    expiresAt: signal.expiresAt || "",
   };
 }
 

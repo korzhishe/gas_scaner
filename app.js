@@ -10,6 +10,7 @@ const DEFAULT_CONFIG = {
 const state = {
   config: DEFAULT_CONFIG,
   stations: [],
+  signals: [],
   filtered: [],
   selectedId: null,
   trafficVisible: true,
@@ -32,6 +33,7 @@ const els = {
   openCount: document.querySelector("#openCount"),
   bestAi92: document.querySelector("#bestAi92"),
   trafficAvg: document.querySelector("#trafficAvg"),
+  globalSignals: document.querySelector("#globalSignals"),
   searchInput: document.querySelector("#searchInput"),
   trafficFilter: document.querySelector("#trafficFilter"),
   sortSelect: document.querySelector("#sortSelect"),
@@ -73,6 +75,7 @@ async function loadAll() {
     resetTiles();
     const payload = await fetchJson(withCacheBust(state.config.dataUrl));
     state.stations = normalizeStations(payload.stations || []);
+    state.signals = normalizeSignals(payload.signals || []);
     render(payload);
   } catch (error) {
     console.error(error);
@@ -129,6 +132,7 @@ function normalizeStations(stations) {
       status: station.status || "unknown",
       fuels: Array.isArray(station.fuels) ? station.fuels : [],
       services: Array.isArray(station.services) ? station.services : [],
+      signals: normalizeSignals(station.signals || []),
       traffic: {
         score: Number(station.traffic?.score ?? 0),
         label: station.traffic?.label || "Нет данных",
@@ -224,7 +228,7 @@ function applyFilters(stations) {
     }
 
     if (state.filters.query) {
-      const haystack = [station.name, station.brand, station.address, station.district]
+      const haystack = [station.name, station.brand, station.address, station.district, ...station.signals.map((signal) => signal.note)]
         .filter(Boolean)
         .join(" ")
         .toLowerCase();
@@ -280,7 +284,7 @@ function renderSummary() {
 
   els.openCount.textContent = `${openStations.length}/${state.stations.length}`;
   els.bestAi92.textContent = ai92.length ? `${Math.min(...ai92).toFixed(2)} ₽` : "-";
-  els.trafficAvg.textContent = avgTraffic === null ? "-" : `${avgTraffic.toFixed(1)}/10`;
+  els.trafficAvg.textContent = String(countFreshSignals());
   els.resultCount.textContent = `${state.filtered.length} ${pluralizeStation(state.filtered.length)}`;
 }
 
@@ -291,6 +295,7 @@ function renderList() {
   }
 
   els.stationList.innerHTML = state.filtered.map(renderStationCard).join("");
+  renderGlobalSignals();
   els.stationList.querySelectorAll(".station-card").forEach((card) => {
     card.addEventListener("click", () => selectStation(card.dataset.id));
   });
@@ -309,12 +314,22 @@ function renderStationCard(station) {
       </span>
       <span class="fuel-row">${station.fuels.map(renderFuel).join("")}</span>
       <span class="schedule-row">${renderSchedule(station.openUntil)}</span>
+      ${renderSignals(station.signals)}
       <span class="station-foot">
         ${renderTraffic(station.traffic)}
         <span>${escapeHtml(formatDateTime(station.updatedAt))}</span>
       </span>
     </button>
   `;
+}
+
+function renderGlobalSignals() {
+  const signals = [...state.signals]
+    .filter(isSignalFresh)
+    .sort((a, b) => signalPriority(a.category) - signalPriority(b.category) || Date.parse(b.observedAt || 0) - Date.parse(a.observedAt || 0))
+    .slice(0, 4);
+
+  els.globalSignals.innerHTML = signals.map(renderSignalCard).join("");
 }
 
 function renderStatus(status) {
@@ -362,6 +377,80 @@ function renderSchedule(schedule) {
       <span>${escapeHtml(label || "График не указан")}</span>
     </span>
   `;
+}
+
+function renderSignals(signals = []) {
+  const freshSignals = signals.filter(isSignalFresh).slice(0, 3);
+  if (!freshSignals.length) return "";
+  return `<span class="signal-row">${freshSignals.map(renderSignalPill).join("")}</span>`;
+}
+
+function renderSignalCard(signal) {
+  const href = signal.sourceUrl ? ` href="${escapeHtml(signal.sourceUrl)}" target="_blank" rel="noreferrer"` : "";
+  return `
+    <a class="signal-card signal-${escapeHtml(signal.category)}"${href}>
+      <span>${escapeHtml(signalLabel(signal))}</span>
+      <strong>${escapeHtml(signal.note || "сигнал требует проверки")}</strong>
+      <small>${escapeHtml(formatDateTime(signal.observedAt))} · ${escapeHtml(signal.source || "источник")}</small>
+    </a>
+  `;
+}
+
+function renderSignalPill(signal) {
+  const title = [signal.source, formatDateTime(signal.observedAt)].filter(Boolean).join(" · ");
+  return `
+    <span class="signal-pill signal-${escapeHtml(signal.category)}" title="${escapeHtml(title)}">
+      <i data-lucide="${signalIcon(signal.category)}" aria-hidden="true"></i>
+      <span>${escapeHtml(signalLabel(signal))}: ${escapeHtml(signal.note || "проверить")}</span>
+    </span>
+  `;
+}
+
+function signalLabel(signal) {
+  const labels = {
+    delivery_expected: "Привоз",
+    fuel_available: "Есть топливо",
+    no_fuel: "Нет топлива",
+    closed_many: "Закрыто",
+    queue: "Очередь",
+    unknown: "Сигнал",
+  };
+  return labels[signal.category] || labels.unknown;
+}
+
+function signalIcon(category) {
+  return {
+    delivery_expected: "truck",
+    fuel_available: "fuel",
+    no_fuel: "circle-off",
+    closed_many: "ban",
+    queue: "users",
+    unknown: "message-circle-warning",
+  }[category] || "message-circle-warning";
+}
+
+function signalPriority(category) {
+  return {
+    fuel_available: 1,
+    delivery_expected: 2,
+    queue: 3,
+    no_fuel: 4,
+    closed_many: 5,
+    unknown: 9,
+  }[category] || 9;
+}
+
+function isSignalFresh(signal) {
+  if (!signal?.observedAt) return false;
+  const observed = Date.parse(signal.observedAt);
+  const expires = Date.parse(signal.expiresAt || 0);
+  if (Number.isNaN(observed)) return false;
+  if (!Number.isNaN(expires) && expires < Date.now()) return false;
+  return Date.now() - observed <= 48 * 60 * 60 * 1000;
+}
+
+function countFreshSignals() {
+  return state.stations.reduce((sum, station) => sum + station.signals.filter(isSignalFresh).length, 0) + state.signals.filter(isSignalFresh).length;
 }
 
 function formatSchedule(schedule) {
@@ -414,7 +503,7 @@ function renderMap() {
     const marker = L.marker([station.coords.lat, station.coords.lng], {
       icon: L.divIcon({
         className: "",
-        html: `<span class="marker-dot ${station.status}">${markerLabel(station)}</span>`,
+        html: `<span class="marker-dot ${station.status}${station.signals.some(isSignalFresh) ? " has-signal" : ""}">${markerLabel(station)}</span>`,
         iconSize: [34, 34],
         iconAnchor: [17, 17],
       }),
@@ -462,6 +551,7 @@ function renderDetail() {
     <div class="service-row">
       ${renderTraffic(station.traffic)}
       ${renderSchedule(station.openUntil)}
+      ${renderSignals(station.signals)}
       ${station.services.map((service) => `<span class="fuel-price">${escapeHtml(service)}</span>`).join("")}
     </div>
   `;
@@ -522,6 +612,24 @@ function renderError(message) {
   els.stationList.innerHTML = `<div class="empty-state">${escapeHtml(message)}</div>`;
   els.resultCount.textContent = "0 АЗС";
   els.dataStamp.textContent = "-";
+}
+
+function normalizeSignals(signals) {
+  return Array.isArray(signals)
+    ? signals.map((signal) => ({
+        id: signal.id || "",
+        stationId: signal.stationId || "",
+        category: signal.category || "unknown",
+        confidence: Number(signal.confidence ?? 0),
+        queueLevel: signal.queueLevel || "",
+        fuelTypes: Array.isArray(signal.fuelTypes) ? signal.fuelTypes : [],
+        note: signal.note || "",
+        source: signal.source || "",
+        sourceUrl: signal.sourceUrl || "",
+        observedAt: signal.observedAt || "",
+        expiresAt: signal.expiresAt || "",
+      }))
+    : [];
 }
 
 function formatDateTime(value) {

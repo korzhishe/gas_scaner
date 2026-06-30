@@ -12,6 +12,7 @@
 - `scripts/import-osm-opening-hours.mjs` - импорт расписаний из OpenStreetMap `opening_hours` и расчет `open/closed` на текущее время Краснодара.
 - `scripts/import-2gis-stations.mjs` - основной импорт каталога АЗС из 2ГИС в радиусе 40 км.
 - `scripts/import-2gis-opening-hours.mjs` - импорт расписаний из 2ГИС. Первый запуск сопоставляет АЗС с id 2ГИС, последующие запуски обновляют расписания пачкой через `items/byid`.
+- `scripts/import-public-signals.mjs` - мониторинг публичных Telegram/RSS-источников по свежим сообщениям про бензин, очереди и закрытые АЗС.
 - `scripts/import-benzup.mjs` - импорт АЗС и цен из Benzup API в collector.
 - `scripts/update-stations.mjs` - обновление `data/stations.json` из внешнего JSON API.
 - `.github/workflows/pages.yml` - деплой на GitHub Pages.
@@ -63,6 +64,8 @@ COLLECTOR_TOKEN=change-me python3 collector/server.py
 
 - `GET /api/stations` - актуальный JSON для сайта и GitHub Actions.
 - `POST /api/reports` - обновление одной АЗС. Если задан `COLLECTOR_TOKEN`, передайте `Authorization: Bearer <token>`.
+- `GET /api/signals` - свежие публичные сигналы о дефиците, очередях и наличии топлива.
+- `POST /api/signals` - запись найденного сигнала из публичного источника.
 - `POST /api/prune` - удаление устаревших станций по списку id, используется импортом 2ГИС после успешного обновления каталога.
 - `GET /api/reports?stationId=krd-001` - последние отчеты.
 
@@ -150,6 +153,51 @@ scripts/start-2gis-stations-sync.sh --prune-other-sources
 ```
 
 2ГИС через официальный API отдает агрегаты отзывов (`rating`, количество отзывов), но не тексты свежих отзывов с датами. Поэтому автоматическая логика “по отзывам сегодня/вчера понять, есть ли бензин” сейчас не включена: для этого нужен отдельный официальный источник отзывов или разрешенный API с текстами и датами.
+
+## Мониторинг публичных сигналов
+
+Для оперативной ситуации с дефицитом топлива collector дополнительно собирает свежие публичные сообщения из Telegram web-лент и RSS. Парсер ищет сообщения про бензин, АЗС, заправки, очереди, закрытия, привоз топлива и оставляет только свежие сигналы за последние 48 часов.
+
+Проверка без записи:
+
+```bash
+scripts/start-public-signals-sync.sh --dry-run
+```
+
+Импорт в collector:
+
+```bash
+scripts/start-public-signals-sync.sh
+```
+
+По умолчанию мониторятся публичные Telegram-ленты:
+
+- `krd_tipich_ru` - Типичный Краснодар
+- `krddtp1` - КРДДТП
+- `KrasnodarUMR` - Краснодар ЮМР
+- `chp_krd` - ЧП Краснодар
+- `kuban24` - Кубань 24
+- `krd_chp` - Новости Краснодара
+
+Дополнительные публичные Telegram-каналы можно добавить через `.collector.env`:
+
+```bash
+SIGNAL_TELEGRAM_CHANNELS=channel:name,another_channel:Название
+```
+
+RSS-ленты сайтов или форумов можно добавить так:
+
+```bash
+SIGNAL_RSS_FEEDS=https://example.com/rss|Название источника,https://forum.example.com/rss|Форум
+```
+
+Текущий сервер обновляет публичные сигналы каждые 10 минут:
+
+```cron
+*/10 * * * * cd /home/deploy/projects/gas_scaner && scripts/start-public-signals-sync.sh >> /tmp/gas_scaner_public_signals.log 2>&1
+```
+
+Приватные чаты и закрытые форумы не парсятся без разрешенного доступа. Если есть официальный API, RSS, публичная web-страница или экспорт с согласием участников, их можно подключить как новый источник.
 
 ## Импорт расписаний из OpenStreetMap
 
